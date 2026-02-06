@@ -70,10 +70,26 @@ jobs:
             echo "Tag $TAG_NAME does not match package.json version v${{ steps.pkg.outputs.version }}."
             exit 1
           fi
+      - name: Compute npm dist-tag
+        id: dist_tag
+        run: |
+          VERSION="${{ steps.pkg.outputs.version }}"
+          if [[ "$VERSION" == *-* ]]; then
+            PREID="${VERSION#*-}"
+            PREID="${PREID%%.*}"
+            echo "tag=$PREID" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
       - run: npm ci
       - run: npm run build
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: |
+          if [ "${{ steps.dist_tag.outputs.tag }}" = "latest" ]; then
+            npm publish --provenance --access public
+          else
+            npm publish --provenance --access public --tag "${{ steps.dist_tag.outputs.tag }}"
+          fi
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:

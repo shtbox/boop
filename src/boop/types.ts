@@ -15,6 +15,7 @@ export type BoopClassNames = Partial<{
 }>;
 
 export type BoopButtonPlacement = "inline" | "fixed";
+export type BoopPanelPlacement = "center" | "fixed";
 export type BoopPanelVariant = "sidebar" | "widget";
 
 export type BoopFieldName = "name" | "email" | "message";
@@ -24,6 +25,19 @@ export type BoopFixedOffset = Partial<{
   right: number;
   bottom: number;
   left: number;
+}>;
+
+export type BoopButtonOptions = Partial<{
+  label: string;
+  placement: BoopButtonPlacement;
+  fixedOffset: BoopFixedOffset;
+}>;
+
+export type BoopPanelOptions = Partial<{
+  placement: BoopPanelPlacement;
+  fixedOffset: BoopFixedOffset;
+  width: number | string;
+  maxHeight: number | string;
 }>;
 
 export type BoopLabels = Partial<{
@@ -78,11 +92,8 @@ export type BoopVariantOptions = Partial<{
   title: string;
   labels: BoopLabels;
   placeholders: BoopPlaceholders;
-  buttonLabel: string;
-  buttonPlacement: BoopButtonPlacement;
-  fixedOffset: BoopFixedOffset;
-  panelWidth: number | string;
-  panelMaxHeight: number | string;
+  button: BoopButtonOptions;
+  panel: BoopPanelOptions;
   successMessage: string;
   errorMessage: string;
 }>;

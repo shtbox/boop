@@ -11,7 +11,7 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@shtbox/boop": "file:../shtbox-boop-0.1.0.tgz"
+    "@shtbox/boop": "file:../shtbox-boop-0.2.0.tgz"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

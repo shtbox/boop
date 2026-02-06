@@ -1,6 +1,6 @@
 {
   "name": "@shtbox/boop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Simple Interactions - Embeddable feedback widget for React websites.",
   "keywords": [
     "react",
@@ -34,6 +34,15 @@
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
+    "commit": "cz",
+    "bump:patch": "npm version patch --tag-version-prefix v -m \"chore(release): v%s\"",
+    "bump:minor": "npm version minor --tag-version-prefix v -m \"chore(release): v%s\"",
+    "bump:major": "npm version major --tag-version-prefix v -m \"chore(release): v%s\"",
+    "bump:prepatch": "npm version prepatch --tag-version-prefix v -m \"chore(release): v%s\"",
+    "bump:preminor": "npm version preminor --tag-version-prefix v -m \"chore(release): v%s\"",
+    "bump:premajor": "npm version premajor --tag-version-prefix v -m \"chore(release): v%s\"",
+    "bump:prerelease": "npm version prerelease --tag-version-prefix v -m \"chore(release): v%s\"",
+    "prepack": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -50,6 +59,8 @@
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.0.18",
+    "commitizen": "^4.3.1",
+    "cz-conventional-changelog": "^3.3.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jsx-a11y": "^6.10.2",
@@ -67,6 +78,9 @@
   },
   "directories": {
     "example": "example"
+  },
+  "commitizen": {
+    "path": "cz-conventional-changelog"
   },
   "repository": {
     "type": "git",

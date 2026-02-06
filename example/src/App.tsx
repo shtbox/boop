@@ -9,8 +9,10 @@ const App = () => {
   const [buttonLabel, setButtonLabel] = useState("Open Boop");
   const [panelWidth, setPanelWidth] = useState(420);
   const [panelMaxHeight, setPanelMaxHeight] = useState(80);
-  const [offsetRight, setOffsetRight] = useState(24);
-  const [offsetBottom, setOffsetBottom] = useState(24);
+  const [buttonOffsetRight, setButtonOffsetRight] = useState(24);
+  const [buttonOffsetBottom, setButtonOffsetBottom] = useState(24);
+  const [panelOffsetRight, setPanelOffsetRight] = useState(48);
+  const [panelOffsetBottom, setPanelOffsetBottom] = useState(48);
   const [useDefaultStyles, setUseDefaultStyles] = useState(true);
   const [closeOnSubmit, setCloseOnSubmit] = useState(false);
 
@@ -81,21 +83,39 @@ const App = () => {
               />
             </label>
             <label className="field">
-              Fixed offset right (px)
+              Button offset right (px)
               <input
                 type="number"
                 min={0}
-                value={offsetRight}
-                onChange={(event) => setOffsetRight(Number(event.target.value))}
+                value={buttonOffsetRight}
+                onChange={(event) => setButtonOffsetRight(Number(event.target.value))}
               />
             </label>
             <label className="field">
-              Fixed offset bottom (px)
+              Button offset bottom (px)
               <input
                 type="number"
                 min={0}
-                value={offsetBottom}
-                onChange={(event) => setOffsetBottom(Number(event.target.value))}
+                value={buttonOffsetBottom}
+                onChange={(event) => setButtonOffsetBottom(Number(event.target.value))}
+              />
+            </label>
+            <label className="field">
+              Panel offset right (px)
+              <input
+                type="number"
+                min={0}
+                value={panelOffsetRight}
+                onChange={(event) => setPanelOffsetRight(Number(event.target.value))}
+              />
+            </label>
+            <label className="field">
+              Panel offset bottom (px)
+              <input
+                type="number"
+                min={0}
+                value={panelOffsetBottom}
+                onChange={(event) => setPanelOffsetBottom(Number(event.target.value))}
               />
             </label>
             <label className="field checkbox-field">
@@ -123,16 +143,31 @@ const App = () => {
               behavior: { closeOnSubmit },
               style: { useDefaultStyles },
               widgetOptions: {
-                buttonPlacement,
-                buttonLabel,
-                panelWidth,
-                panelMaxHeight: `${panelMaxHeight}vh`,
-                fixedOffset: { right: offsetRight, bottom: offsetBottom }
+                button: {
+                  placement: buttonPlacement,
+                  label: buttonLabel,
+                  fixedOffset: {
+                    right: buttonOffsetRight,
+                    bottom: buttonOffsetBottom
+                  }
+                },
+                panel: {
+                  width: panelWidth,
+                  maxHeight: `${panelMaxHeight}vh`,
+                  fixedOffset: {
+                    right: panelOffsetRight,
+                    bottom: panelOffsetBottom
+                  }
+                }
               },
               sidebarOptions: {
-                buttonPlacement,
-                buttonLabel,
-                panelWidth
+                button: {
+                  placement: buttonPlacement,
+                  label: buttonLabel
+                },
+                panel: {
+                  width: panelWidth
+                }
               }
             }}
           />
@@ -147,8 +182,10 @@ const App = () => {
                 endpoint: "https://boop.shtbox.io",
                 darkMode,
                 sidebarOptions: {
-                  buttonPlacement: "inline",
-                  buttonLabel: "Send Feedback"
+                  button: {
+                    placement: "inline",
+                    label: "Send Feedback"
+                  }
                 }
               }}
             />
@@ -162,8 +199,10 @@ const App = () => {
                 endpoint: "https://boop.shtbox.io",
                 darkMode,
                 sidebarOptions: {
-                  buttonPlacement: "fixed",
-                  buttonLabel: "Feedback"
+                  button: {
+                    placement: "fixed",
+                    label: "Feedback"
+                  }
                 }
               }}
             />
@@ -183,7 +222,9 @@ const App = () => {
                   }
                 },
                 sidebarOptions: {
-                  buttonPlacement: "inline"
+                  button: {
+                    placement: "inline"
+                  }
                 }
               }}
             />
@@ -191,15 +232,21 @@ const App = () => {
 
           <div className={`example-card ${darkMode ? "dark" : ""}`}>
             <h2>Widget Panel</h2>
-            <p>Centered widget panel layout</p>
+            <p>Fixed widget panel layout</p>
             <Boop
               options={{
                 endpoint: "https://boop.shtbox.io",
                 darkMode,
                 mode: "widget",
                 widgetOptions: {
-                  buttonPlacement: "inline",
-                  buttonLabel: "Open Widget"
+                  button: {
+                    placement: "inline",
+                    label: "Open Widget"
+                  },
+                  panel: {
+                    placement: "fixed",
+                    fixedOffset: { right: 48, bottom: 48 }
+                  }
                 }
               }}
             />
@@ -217,8 +264,10 @@ const App = () => {
           endpoint: "https://boop.shtbox.io",
           darkMode,
           sidebarOptions: {
-            buttonPlacement: "fixed",
-            buttonLabel: "💬 Feedback"
+            button: {
+              placement: "fixed",
+              label: "💬 Feedback"
+            }
           }
         }}
       />

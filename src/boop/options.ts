@@ -42,8 +42,13 @@ const createDefaultVariantOptions = (): BoopVariantOptions => ({
   title: "Send feedback",
   labels: { ...defaultLabels },
   placeholders: { ...defaultPlaceholders },
-  buttonLabel: "Feedback",
-  buttonPlacement: "inline",
+  button: {
+    label: "Feedback",
+    placement: "inline"
+  },
+  panel: {
+    placement: "center"
+  },
   successMessage: "Thanks for the feedback!",
   errorMessage: "Unable to submit feedback."
 });
@@ -77,7 +82,9 @@ const mergeVariantOptions = (
   ...base,
   ...overrides,
   labels: { ...(base.labels ?? {}), ...(overrides?.labels ?? {}) },
-  placeholders: { ...(base.placeholders ?? {}), ...(overrides?.placeholders ?? {}) }
+  placeholders: { ...(base.placeholders ?? {}), ...(overrides?.placeholders ?? {}) },
+  button: { ...(base.button ?? {}), ...(overrides?.button ?? {}) },
+  panel: { ...(base.panel ?? {}), ...(overrides?.panel ?? {}) }
 });
 
 const mergeStyleOptions = (

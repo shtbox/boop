@@ -26,11 +26,11 @@ export const App = () => (
         mode: "widget",
         widgetOptions: {
           title: "Send feedback",
-          buttonLabel: "Open widget"
+          button: { label: "Open widget" }
         },
         sidebarOptions: {
           title: "Send feedback",
-          buttonLabel: "Open sidebar"
+          button: { label: "Open sidebar" }
         },
         behavior: { closeOnSubmit: true },
         style: {
@@ -76,15 +76,26 @@ export const App = () => (
   title?: string,
   labels?: BoopLabels,
   placeholders?: BoopPlaceholders,
-  buttonLabel?: string,
-  buttonPlacement?: "inline" | "fixed",
-  fixedOffset?: { top?, right?, bottom?, left? },
-  panelWidth?: number | string,
-  panelMaxHeight?: number | string,
+  button?: {
+    label?: string,
+    placement?: "inline" | "fixed",
+    fixedOffset?: { top?, right?, bottom?, left? }
+  },
+  panel?: {
+    placement?: "center" | "fixed",
+    fixedOffset?: { top?, right?, bottom?, left? },
+    width?: number | string,
+    maxHeight?: number | string
+  },
   successMessage?: string,
   errorMessage?: string
 }
 ```
+
+When `mode` is `"widget"`, the panel defaults to `"fixed"` if the button is fixed or
+`panel.fixedOffset` is set. If the panel is fixed and no `panel.fixedOffset` is
+provided, the panel offset is derived from the button offset plus a 24px gap
+(default button offset is 24px).
 
 ### BoopBehaviorOptions
 

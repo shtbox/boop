@@ -1,4 +1,5 @@
 import React from "react";
+import { DEFAULT_BUTTON_FIXED_OFFSET } from "./constants";
 import type { BoopTheme } from "./types";
 
 export type BoopStyles = {
@@ -81,8 +82,8 @@ export const createStyles = (darkMode: boolean): BoopStyles => {
     },
     buttonFixed: {
       position: "fixed" as const,
-      right: 24,
-      bottom: 24,
+      right: DEFAULT_BUTTON_FIXED_OFFSET.right,
+      bottom: DEFAULT_BUTTON_FIXED_OFFSET.bottom,
       zIndex: 10010
     },
     overlay: {

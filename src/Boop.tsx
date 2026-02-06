@@ -1,13 +1,32 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { DEFAULT_BUTTON_FIXED_OFFSET, DEFAULT_WIDGET_GAP } from "./boop/constants";
 import { mergeBoopOptions } from "./boop/options";
 import { createStyles, getDefaultTheme } from "./boop/styles";
-import type { BoopProps } from "./boop/types";
+import type { BoopFixedOffset, BoopProps } from "./boop/types";
 import { isValidEmail, mergeClassNames } from "./boop/utils";
 
 type SubmitStatus = {
   type: "idle" | "success" | "error";
   message?: string;
 };
+
+const addOffsetGap = (offset: BoopFixedOffset, gap: number): BoopFixedOffset => ({
+  ...(offset.top !== undefined ? { top: offset.top + gap } : {}),
+  ...(offset.right !== undefined ? { right: offset.right + gap } : {}),
+  ...(offset.bottom !== undefined ? { bottom: offset.bottom + gap } : {}),
+  ...(offset.left !== undefined ? { left: offset.left + gap } : {})
+});
+
+const resolveBaseButtonOffset = (offset?: BoopFixedOffset): BoopFixedOffset => ({
+  ...DEFAULT_BUTTON_FIXED_OFFSET,
+  ...(offset ?? {})
+});
+
+const resolvePanelFixedOffset = (
+  panelOffset: BoopFixedOffset | undefined,
+  buttonOffset: BoopFixedOffset | undefined
+): BoopFixedOffset =>
+  panelOffset ?? addOffsetGap(resolveBaseButtonOffset(buttonOffset), DEFAULT_WIDGET_GAP);
 
 export const Boop = ({ options }: BoopProps) => {
   const resolvedOptions = useMemo(() => mergeBoopOptions(options), [options]);
@@ -35,18 +54,25 @@ export const Boop = ({ options }: BoopProps) => {
     onSubmitSuccess,
     onSubmitError
   } = callbacks;
-  const {
-    title,
-    labels,
-    placeholders,
-    buttonLabel,
-    buttonPlacement,
-    fixedOffset,
-    panelWidth,
-    panelMaxHeight,
-    successMessage,
-    errorMessage
-  } = variantOptions;
+  const { title, labels, placeholders, button, panel, successMessage, errorMessage } =
+    variantOptions;
+  const rawVariantOptions = mode === "widget" ? options?.widgetOptions : options?.sidebarOptions;
+  const rawPanelPlacement = rawVariantOptions?.panel?.placement;
+  const rawPanelFixedOffset = rawVariantOptions?.panel?.fixedOffset;
+  const buttonLabel = button?.label ?? "Feedback";
+  const buttonPlacement = button?.placement ?? "inline";
+  const buttonFixedOffset = button?.fixedOffset;
+  const panelPlacement =
+    rawPanelPlacement ??
+    (mode === "widget" && (rawPanelFixedOffset || buttonPlacement === "fixed")
+      ? "fixed"
+      : "center");
+  const panelFixedOffset =
+    mode === "widget" && panelPlacement === "fixed"
+      ? resolvePanelFixedOffset(panel?.fixedOffset, buttonFixedOffset)
+      : undefined;
+  const panelWidth = panel?.width;
+  const panelMaxHeight = panel?.maxHeight;
   const footerSlot = slots.footer;
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -201,10 +227,10 @@ export const Boop = ({ options }: BoopProps) => {
             ? {
                 ...(useDefaultStyles
                   ? getStyle("buttonFixed")
-                  : fixedOffset
+                  : buttonFixedOffset
                   ? { position: "fixed", zIndex: 10010 }
                   : {}),
-                ...(fixedOffset ?? {})
+                ...(buttonFixedOffset ?? {})
               }
             : null)
         }}
@@ -218,7 +244,7 @@ export const Boop = ({ options }: BoopProps) => {
         <div
           className={mergeClassNames("boop-overlay", classNames?.overlay)}
           style={
-            mode === "widget" && fixedOffset
+            mode === "widget" && panelPlacement === "fixed"
               ? getStyle("overlay")
               : mode === "widget"
               ? getStyle("overlayCenter")
@@ -231,8 +257,8 @@ export const Boop = ({ options }: BoopProps) => {
             className={mergeClassNames("boop-panel", classNames?.panel)}
             style={{
               ...(mode === "widget" ? getStyle("panelWidget") : getStyle("panel")),
-              ...(mode === "widget" && fixedOffset
-                ? { position: "fixed", ...fixedOffset }
+              ...(mode === "widget" && panelPlacement === "fixed"
+                ? { position: "fixed", ...(panelFixedOffset ?? {}) }
                 : {}),
               ...(panelWidth ? { maxWidth: panelWidth } : {}),
               ...(panelMaxHeight ? { maxHeight: panelMaxHeight } : {})
