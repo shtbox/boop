@@ -14,7 +14,6 @@ Boop is intentionally small. Drop in <Boop /> and you are done.
 import { Boop } from "@shtbox/boop";
 export const App = () => <Boop />;
 ````
-Breaking change: direct props were removed in favour of the options object.
 
 ## Why Boop
 
