@@ -49,8 +49,6 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
@@ -60,9 +58,22 @@
     "globals": "^17.3.0",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.54.0",
     "vitest": "^4.0.18"
-  }
+  },
+  "directories": {
+    "example": "example"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shtbox/boop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shtbox/boop/issues"
+  },
+  "homepage": "https://github.com/shtbox/boop#readme"
 }
