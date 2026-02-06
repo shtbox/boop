@@ -111,6 +111,8 @@ export const App = () => (
   animation?: BoopAnimationOptions,
   backdrop?: BoopBackdropOptions,
   urlResolver?: () => string | undefined,
+  includeStackTrace?: boolean,
+  onSuccessRenderer?: (payload, helpers) => ReactNode,
   metadata?: Record<string, unknown>,
   slots?: BoopSlots
 }
@@ -233,6 +235,31 @@ You can also use the built-in helper for safer URL resolution:
 import { defaultUrlResolver } from "@shtbox/boop";
 
 <Boop options={{ urlResolver: defaultUrlResolver }} />;
+```
+
+### includeStackTrace
+
+When enabled, Boop captures a small, recent console buffer and a stack trace snapshot
+and sends them in `metadata.stack`. The buffer is capped and not configurable to keep
+the surface minimal.
+
+### onSuccessRenderer
+
+Override the default thank-you view with a custom renderer. It receives the submitted
+payload and helpers to close the widget or reset back to the form.
+
+```tsx
+<Boop
+  options={{
+    onSuccessRenderer: (payload, helpers) => (
+      <div>
+        <p>Thanks {payload.name || "there"}!</p>
+        <button onClick={helpers.reset}>Send another</button>
+        <button onClick={helpers.close}>Close</button>
+      </div>
+    )
+  }}
+/>
 ```
 
 ### BoopSlots

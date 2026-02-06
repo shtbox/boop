@@ -19,6 +19,8 @@ export type BoopStyles = {
   close: React.CSSProperties;
   footer: React.CSSProperties;
   attribution: React.CSSProperties;
+  errorMessageContainer: React.CSSProperties;
+  errorMessage: React.CSSProperties;
 };
 
 const defaultTheme = (darkMode: boolean) =>
@@ -32,6 +34,7 @@ const defaultTheme = (darkMode: boolean) =>
         "--boop-button": "#22c55e",
         "--boop-button-text": "#0b1220",
         "--boop-overlay": "rgba(15, 23, 42, 0.7)",
+        "--boop-error-message-bg": "#ffd4d4",
         "--boop-input-bg": "#0b1220"
       }
     : {
@@ -42,6 +45,7 @@ const defaultTheme = (darkMode: boolean) =>
         "--boop-border": "#e2e8f0",
         "--boop-button": "#16a34a",
         "--boop-button-text": "#ffffff",
+        "--boop-error-message-bg": "#ffd4d4",
         "--boop-overlay": "rgba(15, 23, 42, 0.35)",
         "--boop-input-bg": "#ffffff"
       };
@@ -61,8 +65,9 @@ export const createStyles = (darkMode: boolean): BoopStyles => {
     border: cssVar("--boop-border", theme["--boop-border"]),
     button: cssVar("--boop-button", theme["--boop-button"]),
     buttonText: cssVar("--boop-button-text", theme["--boop-button-text"]),
-    overlay: cssVar("--boop-overlay", theme["--boop-overlay"]),
-    inputBg: cssVar("--boop-input-bg", theme["--boop-input-bg"])
+    overlay: cssVar("--boop-overlay", theme["--boop-overlay"]), 
+    inputBg: cssVar("--boop-input-bg", theme["--boop-input-bg"]),
+    errorMessageBg: cssVar("--boop-error-message-bg", theme["--boop-error-message-bg"])
   };
 
   return {
@@ -194,6 +199,17 @@ export const createStyles = (darkMode: boolean): BoopStyles => {
       alignItems: "center",
       justifyContent: "center",
       gap: 4
+    },
+    errorMessageContainer: {
+      display: "flex",
+      flexDirection: "column" as const,
+      gap: 4,
+      backgroundColor: colors.errorMessageBg,
+      padding: "1rem",
+      borderRadius: 10
+    },
+    errorMessage: {
+      color: "red"
     }
   };
 };

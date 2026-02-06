@@ -184,7 +184,7 @@ const App = () => {
                 sidebarOptions: {
                   button: {
                     placement: "inline",
-                    label: "Send Feedback"
+                    label: "Boop Feedback"
                   }
                 }
               }}
@@ -235,9 +235,10 @@ const App = () => {
             <p>Fixed widget panel layout</p>
             <Boop
               options={{
-                endpoint: "https://boop.shtbox.io",
+                endpoint: "https://webhook.site/609d33d3-447f-4bc2-b8b9-647b74e5d970",
                 darkMode,
                 mode: "widget",
+                includeStackTrace: true,
                 widgetOptions: {
                   button: {
                     placement: "inline",

@@ -11,7 +11,8 @@ import type {
   BoopVariantOptions,
   BoopSlots,
   BoopPanelVariant,
-  BoopUrlResolver
+  BoopUrlResolver,
+  BoopSuccessRenderer
 } from "./types";
 
 export type ResolvedBoopOptions = {
@@ -26,6 +27,8 @@ export type ResolvedBoopOptions = {
   callbacks: BoopCallbacks;
   style: BoopStyleOptions;
   urlResolver?: BoopUrlResolver;
+  includeStackTrace: boolean;
+  onSuccessRenderer?: BoopSuccessRenderer;
   metadata?: Record<string, unknown>;
   slots: BoopSlots;
   attribution: boolean;
@@ -46,7 +49,7 @@ const defaultPlaceholders: BoopPlaceholders = {
 };
 
 const createDefaultVariantOptions = (): BoopVariantOptions => ({
-  title: "Send feedback",
+  title: "Feedback",
   labels: { ...defaultLabels },
   placeholders: { ...defaultPlaceholders },
   button: {
@@ -56,7 +59,7 @@ const createDefaultVariantOptions = (): BoopVariantOptions => ({
   panel: {
     placement: "center"
   },
-  successMessage: "Thanks for the feedback!",
+  successMessage: "Your feedback has been submitted successfully.",
   errorMessage: "Unable to submit feedback."
 });
 
@@ -102,6 +105,8 @@ export const defaultBoopOptions: ResolvedBoopOptions = {
   backdrop: defaultBackdropOptions,
   callbacks: {},
   style: defaultStyleOptions,
+  includeStackTrace: false,
+  onSuccessRenderer: undefined,
   metadata: undefined,
   slots: {},
   attribution: true
@@ -167,6 +172,9 @@ export const combineBoopOptions = (
   callbacks: { ...(base?.callbacks ?? {}), ...(overrides?.callbacks ?? {}) },
   style: mergeStyleOptions(base?.style ?? {}, overrides?.style),
   urlResolver: overrides?.urlResolver ?? base?.urlResolver,
+  includeStackTrace:
+    overrides?.includeStackTrace ?? base?.includeStackTrace ?? defaultBoopOptions.includeStackTrace,
+  onSuccessRenderer: overrides?.onSuccessRenderer ?? base?.onSuccessRenderer,
   metadata: mergeMetadata(base?.metadata, overrides?.metadata),
   slots: { ...(base?.slots ?? {}), ...(overrides?.slots ?? {}) },
   attribution: base?.attribution ?? overrides?.attribution ?? true
@@ -190,6 +198,8 @@ export const mergeBoopOptions = (options?: BoopOptions): ResolvedBoopOptions => 
   callbacks: { ...(options?.callbacks ?? {}) },
   style: mergeStyleOptions(defaultStyleOptions, options?.style),
   urlResolver: options?.urlResolver,
+  includeStackTrace: options?.includeStackTrace ?? defaultBoopOptions.includeStackTrace,
+  onSuccessRenderer: options?.onSuccessRenderer,
   metadata: options?.metadata,
   slots: { ...(options?.slots ?? {}) },
   attribution: options?.attribution ?? true

@@ -13,6 +13,8 @@ export type BoopClassNames = Partial<{
   close: string;
   footer: string;
   attribution: string;
+  errorMessageContainer: string;
+  errorMessage: string;
 }>;
 
 export type BoopButtonPlacement = "inline" | "fixed";
@@ -99,7 +101,9 @@ export type BoopStyleKey =
   | "submit"
   | "close"
   | "footer"
-  | "attribution";
+  | "attribution"
+  | "errorMessageContainer"
+  | "errorMessage";
 
 export type BoopBehaviorOptions = Partial<{
   autoOpen: boolean;
@@ -147,6 +151,16 @@ export type BoopSubmitPayload = {
 
 export type BoopUrlResolver = () => string | undefined;
 
+export type BoopSuccessRendererHelpers = {
+  close: () => void;
+  reset: () => void;
+};
+
+export type BoopSuccessRenderer = (
+  payload: BoopSubmitPayload,
+  helpers: BoopSuccessRendererHelpers
+) => React.ReactNode;
+
 export type BoopOptions = Partial<{
   endpoint: string;
   darkMode: boolean;
@@ -159,6 +173,8 @@ export type BoopOptions = Partial<{
   animation: BoopAnimationOptions;
   backdrop: BoopBackdropOptions;
   urlResolver: BoopUrlResolver;
+  includeStackTrace: boolean;
+  onSuccessRenderer: BoopSuccessRenderer;
   metadata: Record<string, unknown>;
   slots: BoopSlots;
   attribution: boolean;

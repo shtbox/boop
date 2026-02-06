@@ -1,4 +1,5 @@
 import type { BoopCallbacks, BoopSubmitPayload, BoopUrlResolver } from "./types";
+import { ensureConsoleCapture, getStackSnapshot } from "./stack";
 import { defaultUrlResolver } from "./url";
 import { isValidEmail } from "./utils";
 
@@ -8,6 +9,7 @@ export type BoopSubmitRequest = {
   callbacks?: BoopCallbacks;
   metadata?: Record<string, unknown>;
   urlResolver?: BoopUrlResolver;
+  includeStackTrace?: boolean;
 };
 
 export const submitBoopFeedback = async ({
@@ -15,7 +17,8 @@ export const submitBoopFeedback = async ({
   payload,
   callbacks,
   metadata,
-  urlResolver
+  urlResolver,
+  includeStackTrace
 }: BoopSubmitRequest): Promise<Response> => {
   const message = payload.message?.trim();
 
@@ -33,9 +36,22 @@ export const submitBoopFeedback = async ({
 
   callbacks?.onSubmitStart?.();
 
+  if (includeStackTrace) {
+    ensureConsoleCapture();
+  }
+  const stackSnapshot = includeStackTrace ? getStackSnapshot() : undefined;
+  const existingStack =
+    (payload.metadata as { stack?: unknown } | undefined)?.stack ??
+    (metadata as { stack?: unknown } | undefined)?.stack;
   const resolvedMetadata =
-    metadata || payload.metadata
-      ? { ...(metadata ?? {}), ...(payload.metadata ?? {}) }
+    metadata || payload.metadata || stackSnapshot
+      ? {
+          ...(metadata ?? {}),
+          ...(payload.metadata ?? {}),
+          ...(stackSnapshot && typeof existingStack === "undefined"
+            ? { stack: stackSnapshot }
+            : {})
+        }
       : undefined;
   const resolvedUrl =
     payload.url ?? urlResolver?.() ?? defaultUrlResolver();

@@ -22,6 +22,8 @@ export type {
   BoopVariantOptions,
   BoopStyleOptions,
   BoopSubmitPayload,
+  BoopSuccessRenderer,
+  BoopSuccessRendererHelpers,
   BoopSlots,
   BoopOptions
 } from "./boop/types";

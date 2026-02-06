@@ -4,12 +4,14 @@ import React, {
   useEffect,
   useId,
   useMemo,
+  useRef,
   useState
 } from "react";
 import { buildBoopMotionStyles, resolveAnimationState } from "./boop/animation";
 import { useBoopVisibility } from "./boop/hooks/useBoopVisibility";
 import { combineBoopOptions, mergeBoopOptions } from "./boop/options";
 import { resolvePanelFixedOffset, resolvePanelPlacement } from "./boop/positioning";
+import { ensureConsoleCapture } from "./boop/stack";
 import { submitBoopFeedback } from "./boop/submit";
 import { createStyles, getDefaultTheme } from "./boop/styles";
 import type { BoopProps, BoopSubmitPayload } from "./boop/types";
@@ -43,6 +45,8 @@ export const Boop = ({ options }: BoopProps) => {
     callbacks,
     style,
     urlResolver,
+    includeStackTrace,
+    onSuccessRenderer,
     metadata,
     slots
   } = resolvedOptions;
@@ -66,6 +70,14 @@ export const Boop = ({ options }: BoopProps) => {
       : undefined;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<SubmitStatus>({ type: "idle" });
+  const [lastSuccessPayload, setLastSuccessPayload] =
+    useState<BoopSubmitPayload | null>(null);
+  const [successVisible, setSuccessVisible] = useState(false);
+  const successAnimationRef = useRef<number | undefined>(undefined);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const successRef = useRef<HTMLDivElement | null>(null);
+  const panelPointerDownRef = useRef(false);
+  const [contentHeight, setContentHeight] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -109,8 +121,29 @@ export const Boop = ({ options }: BoopProps) => {
 
   const open = useCallback(() => {
     setStatus({ type: "idle" });
+    setSuccessVisible(false);
     openVisibility();
   }, [openVisibility]);
+
+  const successTransitionMs = Math.max(animationState.durationMs, 500);
+  const lockContentHeight = useCallback(
+    (element: HTMLElement | null) => {
+      if (!animationState.shouldAnimate || !element) {
+        return;
+      }
+      const nextHeight = element.offsetHeight;
+      if (nextHeight) {
+        setContentHeight(nextHeight);
+      }
+    },
+    [animationState.shouldAnimate]
+  );
+
+  useEffect(() => {
+    if (includeStackTrace) {
+      ensureConsoleCapture();
+    }
+  }, [includeStackTrace]);
 
   useEffect(() => {
     if (autoOpen) {
@@ -118,8 +151,54 @@ export const Boop = ({ options }: BoopProps) => {
     }
   }, [autoOpen, open]);
 
+  useEffect(() => {
+    if (!animationState.shouldAnimate) {
+      setContentHeight(null);
+      return;
+    }
+
+    if (status.type === "success" && !closeOnSubmit) {
+      lockContentHeight(successRef.current);
+    } else {
+      lockContentHeight(formRef.current);
+    }
+  }, [animationState.shouldAnimate, closeOnSubmit, lockContentHeight, status.type]);
+
+  useEffect(() => {
+    if (contentHeight === null || !animationState.shouldAnimate) {
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      setContentHeight(null);
+    }, successTransitionMs);
+    return () => window.clearTimeout(timeout);
+  }, [animationState.shouldAnimate, contentHeight, successTransitionMs]);
+
+  useEffect(() => {
+    if (successAnimationRef.current !== undefined) {
+      window.cancelAnimationFrame(successAnimationRef.current);
+      successAnimationRef.current = undefined;
+    }
+    if (status.type === "success" && !closeOnSubmit) {
+      setSuccessVisible(false);
+      successAnimationRef.current = window.requestAnimationFrame(() => {
+        setSuccessVisible(true);
+      });
+    }
+    return () => {
+      if (successAnimationRef.current !== undefined) {
+        window.cancelAnimationFrame(successAnimationRef.current);
+        successAnimationRef.current = undefined;
+      }
+    };
+  }, [closeOnSubmit, status.type]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (formRef.current && !formRef.current.reportValidity()) {
+      return;
+    }
 
     setIsSubmitting(true);
     setStatus({ type: "idle" });
@@ -136,12 +215,17 @@ export const Boop = ({ options }: BoopProps) => {
         callbacks,
         metadata,
         payload,
-        urlResolver
+        urlResolver,
+        includeStackTrace
       });
+      lockContentHeight(formRef.current);
       setStatus({ type: "success", message: successMessage });
+      setLastSuccessPayload(payload);
       setMessage("");
       if (closeOnSubmit) {
         close();
+      } else {
+        setSuccessVisible(true);
       }
     } catch (error) {
       const submitError = error instanceof Error ? error : new Error(errorMessage);
@@ -151,13 +235,27 @@ export const Boop = ({ options }: BoopProps) => {
     }
   };
 
+  const handleResetSuccess = useCallback(() => {
+    lockContentHeight(successRef.current);
+    setStatus({ type: "idle" });
+    setSuccessVisible(false);
+  }, [lockContentHeight]);
+
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
+    if (panelPointerDownRef.current) {
+      panelPointerDownRef.current = false;
+      return;
+    }
     close();
   };
 
   const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
+  };
+
+  const handlePanelPointerDown = () => {
+    panelPointerDownRef.current = true;
   };
 
   const {
@@ -232,6 +330,7 @@ export const Boop = ({ options }: BoopProps) => {
             aria-modal="true"
             aria-labelledby={titleId}
             onClick={handlePanelClick}
+            onPointerDown={handlePanelPointerDown}
           >
             <div
               className={mergeClassNames("boop-header", classNames?.header)}
@@ -251,99 +350,154 @@ export const Boop = ({ options }: BoopProps) => {
               </button>
             </div>
 
-            <form
-              className={mergeClassNames("boop-form", classNames?.form)}
-              style={getStyle("form")}
-              noValidate
-              onSubmit={handleSubmit}
+            <div
+              style={
+                contentHeight !== null && animationState.shouldAnimate
+                  ? {
+                      height: contentHeight,
+                      overflow: "hidden",
+                      transition: `height ${successTransitionMs}ms ${animationState.easing}`,
+                      willChange: "height"
+                    }
+                  : undefined
+              }
             >
-              <label
-                className={mergeClassNames("boop-field", classNames?.field)}
-                style={getStyle("field")}
-              >
-                {labelText.name}
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                    setName(event.target.value);
-                    onFieldChange?.("name", event.target.value);
+              {status.type === "success" && !closeOnSubmit ? (
+                <div
+                  ref={successRef}
+                  className={mergeClassNames("boop-success", classNames?.form)}
+                  style={{
+                    ...getStyle("form"),
+                    ...(animationState.shouldAnimate
+                      ? {
+                          transition: `opacity ${successTransitionMs}ms ${animationState.easing}, transform ${successTransitionMs}ms ${animationState.easing}`,
+                          opacity: successVisible ? 1 : 0,
+                          transform: successVisible
+                            ? "translateY(0) scale(1)"
+                            : "translateY(12px) scale(0.98)",
+                          willChange: "transform, opacity"
+                        }
+                      : {})
                   }}
-                  placeholder={placeholderText.name}
-                  style={getStyle("input")}
-                />
-              </label>
+                >
+                  {lastSuccessPayload && onSuccessRenderer
+                    ? onSuccessRenderer(lastSuccessPayload, {
+                        close,
+                        reset: handleResetSuccess
+                      })
+                    : null}
+                  {!onSuccessRenderer ? (
+                    <p style={{ margin: 0 }}>{successMessage}</p>
+                  ) : null}
+                </div>
+              ) : (
+                <form
+                  ref={formRef}
+                  className={mergeClassNames("boop-form", classNames?.form)}
+                  style={getStyle("form")}
+                  noValidate
+                  onSubmit={handleSubmit}
+                >
+                  <label
+                    className={mergeClassNames("boop-field", classNames?.field)}
+                    style={getStyle("field")}
+                  >
+                    {labelText.name}
+                  <input
+                      type="text"
+                    id={`${titleId}-name`}
+                    name="name"
+                      value={name}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                        setName(event.target.value);
+                        onFieldChange?.("name", event.target.value);
+                      }}
+                      placeholder={placeholderText.name}
+                      style={getStyle("input")}
+                      disabled={isSubmitting}
+                    />
+                  </label>
 
-              <label
-                className={mergeClassNames("boop-field", classNames?.field)}
-                style={getStyle("field")}
-              >
-                {labelText.email}
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                    setEmail(event.target.value);
-                    onFieldChange?.("email", event.target.value);
-                  }}
-                  placeholder={placeholderText.email}
-                  style={getStyle("input")}
-                />
-              </label>
+                  <label
+                    className={mergeClassNames("boop-field", classNames?.field)}
+                    style={getStyle("field")}
+                  >
+                    {labelText.email}
+                  <input
+                      type="email"
+                    id={`${titleId}-email`}
+                    name="email"
+                      value={email}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                        setEmail(event.target.value);
+                        onFieldChange?.("email", event.target.value);
+                      }}
+                      placeholder={placeholderText.email}
+                      style={getStyle("input")}
+                      disabled={isSubmitting}
+                    />
+                  </label>
 
-              <label
-                className={mergeClassNames("boop-field", classNames?.field)}
-                style={getStyle("field")}
-              >
-                {labelText.message}
-                <textarea
-                  value={message}
-                  onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
-                    setMessage(event.target.value);
-                    onFieldChange?.("message", event.target.value);
-                  }}
-                  placeholder={placeholderText.message}
-                  style={{ ...getStyle("input"), ...getStyle("textarea") }}
-                  className={mergeClassNames("boop-textarea", classNames?.textarea)}
-                  autoFocus
-                  required
-                />
-              </label>
+                  <label
+                    className={mergeClassNames("boop-field", classNames?.field)}
+                    style={getStyle("field")}
+                  >
+                    {labelText.message}
+                  <textarea
+                    id={`${titleId}-message`}
+                    name="message"
+                      value={message}
+                      onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
+                        setMessage(event.target.value);
+                        onFieldChange?.("message", event.target.value);
+                      }}
+                      placeholder={placeholderText.message}
+                      style={{ ...getStyle("input"), ...getStyle("textarea") }}
+                      className={mergeClassNames("boop-textarea", classNames?.textarea)}
+                      autoFocus
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </label>
 
-              <button
-                type="submit"
-                className={mergeClassNames("boop-submit", classNames?.submit)}
-                style={getStyle("submit")}
-                disabled={isSubmitting}
-              >
-                {labelText.submit}
-              </button>
-            </form>
+                  <button
+                    type="submit"
+                    className={mergeClassNames("boop-submit", classNames?.submit)}
+                    style={getStyle("submit")}
+                    disabled={isSubmitting}
+                  >
+                    {labelText.submit}
+                  </button>
+                </form>
+              )}
+            </div>
 
             <div
               className={mergeClassNames("boop-footer", classNames?.footer)}
               style={getStyle("footer")}
             >
-              {status.type !== "idle" ? (
-                <span aria-live="polite">{status.message}</span>
+              {status.type === "error" ? (
+                <div className="boop-error-message-container" style={getStyle("errorMessageContainer")}>
+                  <span className="boop-error-message" aria-live="polite" style={getStyle("errorMessage")}>{status.message}</span>
+                </div>
               ) : null}
               {slots.footer}
             </div>
             {resolvedOptions?.attribution && (
-            <div
-              className={mergeClassNames("boop-attribution", classNames?.attribution)}
-              style={getStyle("attribution")}
-            >
-              Powered by{" "}
-              <a
-                href="https://shtbox.io"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{color: "inherit"}}
+              <div
+                className={mergeClassNames("boop-attribution", classNames?.attribution)}
+                style={getStyle("attribution")}
               >
-                Boop
-              </a>
-            </div>
+                Powered by{" "}
+                <a
+                  href="https://shtbox.io"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "inherit" }}
+                >
+                  Boop
+                </a>
+              </div>
             )}
           </div>
         </div>

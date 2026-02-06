@@ -1,5 +1,13 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState
+} from "react";
 import { combineBoopOptions, mergeBoopOptions } from "../boop/options";
+import { ensureConsoleCapture } from "../boop/stack";
 import { submitBoopFeedback } from "../boop/submit";
 import type { BoopOptions, BoopSubmitPayload } from "../boop/types";
 
@@ -38,11 +46,18 @@ export const BoopProvider = ({ children, defaultOptions }: BoopProviderProps) =>
         callbacks: resolved.callbacks,
         metadata: resolved.metadata,
         payload,
-        urlResolver: resolved.urlResolver
+        urlResolver: resolved.urlResolver,
+        includeStackTrace: resolved.includeStackTrace
       });
     },
     [options]
   );
+
+  useEffect(() => {
+    if (options.includeStackTrace) {
+      ensureConsoleCapture();
+    }
+  }, [options.includeStackTrace]);
 
   const value = useMemo(
     () => ({
