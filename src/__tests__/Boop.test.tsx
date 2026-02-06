@@ -29,7 +29,7 @@ describe("Boop", () => {
   it("submits the feedback payload to the endpoint", async () => {
     mockFetch.mockResolvedValue({ ok: true });
 
-    render(<Boop endpoint="https://example.com/feedback" />);
+    render(<Boop options={{ endpoint: "https://example.com/feedback" }} />);
 
     fireEvent.click(screen.getByRole("button", { name: /feedback/i }));
     fireEvent.change(screen.getByPlaceholderText(/what would you like to share/i), {

@@ -116,16 +116,25 @@ const App = () => {
             </label>
           </div>
           <Boop
-            endpoint="https://boop.shtbox.io"
-            darkMode={darkMode}
-            buttonPlacement={buttonPlacement}
-            panelVariant={panelVariant}
-            buttonLabel={buttonLabel}
-            panelWidth={panelWidth}
-            panelMaxHeight={`${panelMaxHeight}vh`}
-            fixedOffset={{ right: offsetRight, bottom: offsetBottom }}
-            useDefaultStyles={useDefaultStyles}
-            closeOnSubmit={closeOnSubmit}
+            options={{
+              endpoint: "https://boop.shtbox.io",
+              darkMode,
+              mode: panelVariant,
+              behavior: { closeOnSubmit },
+              style: { useDefaultStyles },
+              widgetOptions: {
+                buttonPlacement,
+                buttonLabel,
+                panelWidth,
+                panelMaxHeight: `${panelMaxHeight}vh`,
+                fixedOffset: { right: offsetRight, bottom: offsetBottom }
+              },
+              sidebarOptions: {
+                buttonPlacement,
+                buttonLabel,
+                panelWidth
+              }
+            }}
           />
         </div>
 
@@ -134,10 +143,14 @@ const App = () => {
             <h2>Inline Button</h2>
             <p>Button placed inline in the page flow</p>
             <Boop
-              endpoint="https://boop.shtbox.io"
-              darkMode={darkMode}
-              buttonPlacement="inline"
-              buttonLabel="Send Feedback"
+              options={{
+                endpoint: "https://boop.shtbox.io",
+                darkMode,
+                sidebarOptions: {
+                  buttonPlacement: "inline",
+                  buttonLabel: "Send Feedback"
+                }
+              }}
             />
           </div>
 
@@ -145,10 +158,14 @@ const App = () => {
             <h2>Fixed Button</h2>
             <p>Button fixed to bottom-right corner</p>
             <Boop
-              endpoint="https://boop.shtbox.io"
-              darkMode={darkMode}
-              buttonPlacement="fixed"
-              buttonLabel="Feedback"
+              options={{
+                endpoint: "https://boop.shtbox.io",
+                darkMode,
+                sidebarOptions: {
+                  buttonPlacement: "fixed",
+                  buttonLabel: "Feedback"
+                }
+              }}
             />
           </div>
 
@@ -156,12 +173,18 @@ const App = () => {
             <h2>Custom Styling</h2>
             <p>With custom class names</p>
             <Boop
-              endpoint="https://boop.shtbox.io"
-              darkMode={darkMode}
-              buttonPlacement="inline"
-              classNames={{
-                button: "custom-feedback-button",
-                panel: "custom-feedback-panel"
+              options={{
+                endpoint: "https://boop.shtbox.io",
+                darkMode,
+                style: {
+                  classNames: {
+                    button: "custom-feedback-button",
+                    panel: "custom-feedback-panel"
+                  }
+                },
+                sidebarOptions: {
+                  buttonPlacement: "inline"
+                }
               }}
             />
           </div>
@@ -170,11 +193,15 @@ const App = () => {
             <h2>Widget Panel</h2>
             <p>Centered widget panel layout</p>
             <Boop
-              endpoint="https://boop.shtbox.io"
-              darkMode={darkMode}
-              buttonPlacement="inline"
-              panelVariant="widget"
-              buttonLabel="Open Widget"
+              options={{
+                endpoint: "https://boop.shtbox.io",
+                darkMode,
+                mode: "widget",
+                widgetOptions: {
+                  buttonPlacement: "inline",
+                  buttonLabel: "Open Widget"
+                }
+              }}
             />
           </div>
         </div>
@@ -186,10 +213,14 @@ const App = () => {
 
       {/* Fixed button example - rendered outside container */}
       <Boop
-        endpoint="https://boop.shtbox.io"
-        darkMode={darkMode}
-        buttonPlacement="fixed"
-        buttonLabel="💬 Feedback"
+        options={{
+          endpoint: "https://boop.shtbox.io",
+          darkMode,
+          sidebarOptions: {
+            buttonPlacement: "fixed",
+            buttonLabel: "💬 Feedback"
+          }
+        }}
       />
     </div>
   );

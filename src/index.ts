@@ -8,5 +8,11 @@ export type {
   BoopPlaceholders,
   BoopFieldName,
   BoopFixedOffset,
-  BoopStyleKey
+  BoopStyleKey,
+  BoopBehaviorOptions,
+  BoopCallbacks,
+  BoopVariantOptions,
+  BoopStyleOptions,
+  BoopSlots,
+  BoopOptions
 } from "./boop/types";
