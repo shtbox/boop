@@ -48,6 +48,50 @@ export const App = () => (
 
 > Breaking change: direct props were removed in favor of the `options` object.
 
+## Provider (optional)
+
+You can centralize defaults and update them per page/route with a provider. Component
+`options` still work and override provider options.
+
+```tsx
+import { Boop, BoopProvider, useBoop } from "@shtbox/boop";
+
+const Page = () => {
+  const { updateOptions, submitFeedback } = useBoop();
+
+  return (
+    <>
+      <button
+        onClick={() =>
+          updateOptions({
+            widgetOptions: { button: { label: "Help" } }
+          })
+        }
+      >
+        Update label
+      </button>
+      <button
+        onClick={() =>
+          submitFeedback({
+            message: "Love this!",
+            email: "ada@example.com"
+          })
+        }
+      >
+        Send feedback
+      </button>
+    </>
+  );
+};
+
+export const App = () => (
+  <BoopProvider defaultOptions={{ style: { useDefaultStyles: true } }}>
+    <Page />
+    <Boop options={{ mode: "widget" }} />
+  </BoopProvider>
+);
+```
+
 ## Props
 
 `<Boop />` supports a single prop: `options?: BoopOptions`.
@@ -64,6 +108,8 @@ export const App = () => (
   behavior?: BoopBehaviorOptions,
   callbacks?: BoopCallbacks,
   style?: BoopStyleOptions,
+  animation?: BoopAnimationOptions,
+  backdrop?: BoopBackdropOptions,
   metadata?: Record<string, unknown>,
   slots?: BoopSlots
 }
@@ -131,6 +177,42 @@ provided, the panel offset is derived from the button offset plus a 24px gap
 }
 ```
 
+### BoopAnimationOptions
+
+```
+{
+  enabled?: boolean,
+  durationMs?: number,
+  easing?: string,
+  widget?: {
+    fade?: boolean,
+    slide?: boolean,
+    grow?: boolean,
+    slideDistance?: number,
+    scale?: number
+  },
+  sidebar?: {
+    slide?: boolean,
+    slideDistance?: number | string
+  }
+}
+```
+
+Defaults to animated. Widgets fade, slide up, and grow in; sidebars slide in from the
+right. Set `enabled: false` to disable animation.
+
+### BoopBackdropOptions
+
+```
+{
+  enabled?: boolean,
+  fade?: boolean
+}
+```
+
+`enabled: false` disables the dimmed backdrop. `fade` controls backdrop fade when
+animations are enabled.
+
 ### BoopSlots
 
 ```
@@ -144,7 +226,7 @@ provided, the panel offset is derived from the button offset plus a 24px gap
 Use `options.style.classNames` to target these parts:
 
 ```
-root, button, overlay, panel, header, form, field, textarea, submit, close, footer
+root, button, overlay, panel, header, form, field, textarea, submit, close, footer, attribution
 ```
 
 ### theme

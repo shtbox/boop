@@ -1,9 +1,19 @@
-import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { DEFAULT_BUTTON_FIXED_OFFSET, DEFAULT_WIDGET_GAP } from "./boop/constants";
-import { mergeBoopOptions } from "./boop/options";
+import { combineBoopOptions, mergeBoopOptions } from "./boop/options";
+import { submitBoopFeedback } from "./boop/submit";
 import { createStyles, getDefaultTheme } from "./boop/styles";
-import type { BoopFixedOffset, BoopProps } from "./boop/types";
-import { isValidEmail, mergeClassNames } from "./boop/utils";
+import type { BoopFixedOffset, BoopProps, BoopSubmitPayload } from "./boop/types";
+import { mergeClassNames } from "./boop/utils";
+import { BoopContext } from "./provider/boop-provider";
 
 type SubmitStatus = {
   type: "idle" | "success" | "error";
@@ -28,8 +38,24 @@ const resolvePanelFixedOffset = (
 ): BoopFixedOffset =>
   panelOffset ?? addOffsetGap(resolveBaseButtonOffset(buttonOffset), DEFAULT_WIDGET_GAP);
 
+const formatDistance = (distance: number | string) =>
+  typeof distance === "number" ? `${distance}px` : distance;
+
+const buildTransform = (parts: Array<string | undefined>) => {
+  const value = parts.filter(Boolean).join(" ");
+  return value.length ? value : undefined;
+};
+
 export const Boop = ({ options }: BoopProps) => {
-  const resolvedOptions = useMemo(() => mergeBoopOptions(options), [options]);
+  const boopContext = useContext(BoopContext);
+  const combinedOptions = useMemo(
+    () => combineBoopOptions(boopContext?.options, options),
+    [boopContext?.options, options]
+  );
+  const resolvedOptions = useMemo(
+    () => mergeBoopOptions(combinedOptions),
+    [combinedOptions]
+  );
   const {
     endpoint,
     darkMode,
@@ -37,6 +63,8 @@ export const Boop = ({ options }: BoopProps) => {
     widgetOptions,
     sidebarOptions,
     behavior,
+    animation,
+    backdrop,
     callbacks,
     style,
     metadata,
@@ -45,15 +73,7 @@ export const Boop = ({ options }: BoopProps) => {
   const variantOptions = mode === "widget" ? widgetOptions : sidebarOptions;
   const { classNames, styleOverrides, theme, useDefaultStyles } = style;
   const { autoOpen, closeOnSubmit } = behavior;
-  const {
-    onOpen,
-    onClose,
-    onSubmitStart,
-    onValidationError,
-    onFieldChange,
-    onSubmitSuccess,
-    onSubmitError
-  } = callbacks;
+  const { onOpen, onClose, onFieldChange } = callbacks;
   const { title, labels, placeholders, button, panel, successMessage, errorMessage } =
     variantOptions;
   const rawVariantOptions = mode === "widget" ? options?.widgetOptions : options?.sidebarOptions;
@@ -74,13 +94,16 @@ export const Boop = ({ options }: BoopProps) => {
   const panelWidth = panel?.width;
   const panelMaxHeight = panel?.maxHeight;
   const footerSlot = slots.footer;
-  const [isOpen, setIsOpen] = useState(false);
+  const [isRendered, setIsRendered] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<SubmitStatus>({ type: "idle" });
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const titleId = useId();
+  const animationFrameRef = useRef<number | undefined>(undefined);
+  const animationTimeoutRef = useRef<number | undefined>(undefined);
 
   const styles = useMemo(() => createStyles(darkMode), [darkMode]);
   const themeVars = useMemo(
@@ -107,28 +130,88 @@ export const Boop = ({ options }: BoopProps) => {
     ...(styleOverrides?.[key] ?? {})
   });
 
-  const resetStatus = () => setStatus({ type: "idle" });
-
-  const open = () => {
-    resetStatus();
-    setIsOpen(true);
-    onOpen?.();
+  const animationEnabled = animation?.enabled ?? true;
+  const animationDurationMs = animation?.durationMs ?? 220;
+  const animationEasing = animation?.easing ?? "cubic-bezier(0.22, 1, 0.36, 1)";
+  const widgetAnimation = {
+    fade: true,
+    slide: true,
+    grow: true,
+    slideDistance: 12,
+    scale: 0.98,
+    ...(animation?.widget ?? {})
   };
+  const sidebarAnimation = {
+    slide: true,
+    slideDistance: "100%",
+    ...(animation?.sidebar ?? {})
+  };
+  const backdropEnabled = backdrop?.enabled ?? true;
+  const backdropFade = backdrop?.fade ?? true;
+  const shouldAnimate = animationEnabled && animationDurationMs > 0;
+
+  const setVisibility = useCallback(
+    (visible: boolean) => {
+      if (animationFrameRef.current !== undefined) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = undefined;
+      }
+      if (animationTimeoutRef.current !== undefined) {
+        window.clearTimeout(animationTimeoutRef.current);
+        animationTimeoutRef.current = undefined;
+      }
+      if (!shouldAnimate) {
+        setIsRendered(visible);
+        setIsVisible(visible);
+        return;
+      }
+      if (visible) {
+        setIsRendered(true);
+        animationFrameRef.current = window.requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      } else {
+        setIsVisible(false);
+        animationTimeoutRef.current = window.setTimeout(() => {
+          setIsRendered(false);
+        }, animationDurationMs);
+      }
+    },
+    [animationDurationMs, shouldAnimate]
+  );
+
+  const resetStatus = useCallback(() => setStatus({ type: "idle" }), []);
+
+  const open = useCallback(() => {
+    resetStatus();
+    setVisibility(true);
+    onOpen?.();
+  }, [onOpen, resetStatus, setVisibility]);
 
   const close = useCallback(() => {
-    setIsOpen(false);
+    setVisibility(false);
     onClose?.();
-  }, [onClose]);
+  }, [onClose, setVisibility]);
 
   useEffect(() => {
     if (autoOpen) {
       open();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoOpen]);
+  }, [autoOpen, open]);
 
   useEffect(() => {
-    if (!isOpen) {
+    return () => {
+      if (animationFrameRef.current !== undefined) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (animationTimeoutRef.current !== undefined) {
+        window.clearTimeout(animationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isRendered) {
       return;
     }
 
@@ -140,61 +223,35 @@ export const Boop = ({ options }: BoopProps) => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [close, isOpen]);
+  }, [close, isRendered]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!message.trim()) {
-      const messageText = "Please add a feedback message.";
-      setStatus({ type: "error", message: messageText });
-      onValidationError?.("message", messageText);
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      const messageText = "Please provide a valid email address.";
-      setStatus({ type: "error", message: messageText });
-      onValidationError?.("email", messageText);
-      return;
-    }
-
     setIsSubmitting(true);
     setStatus({ type: "idle" });
-    onSubmitStart?.();
 
     try {
-      const payload = {
-        url: window.location.href,
+      const payload: BoopSubmitPayload = {
         name: name.trim() || undefined,
         email: email.trim() || undefined,
-        message: message.trim(),
-        metadata
+        message: message.trim()
       };
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+      await submitBoopFeedback({
+        endpoint,
+        callbacks,
+        metadata,
+        payload
       });
-
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-      }
-
       setStatus({ type: "success", message: successMessage });
       setMessage("");
-      onSubmitSuccess?.(response);
       if (closeOnSubmit) {
         close();
       }
     } catch (error) {
-      const submitError =
-        error instanceof Error ? error : new Error(errorMessage);
+      const submitError = error instanceof Error ? error : new Error(errorMessage);
       setStatus({ type: "error", message: submitError.message || errorMessage });
-      onSubmitError?.(submitError);
     } finally {
       setIsSubmitting(false);
     }
@@ -208,6 +265,63 @@ export const Boop = ({ options }: BoopProps) => {
   const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
   };
+
+  const panelTransition = shouldAnimate
+    ? [
+        (mode === "widget" && (widgetAnimation.slide || widgetAnimation.grow)) ||
+        (mode !== "widget" && sidebarAnimation.slide)
+          ? `transform ${animationDurationMs}ms ${animationEasing}`
+          : null,
+        mode === "widget" && widgetAnimation.fade
+          ? `opacity ${animationDurationMs}ms ${animationEasing}`
+          : null
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : undefined;
+  const widgetTransform = buildTransform([
+    widgetAnimation.slide
+      ? `translateY(${formatDistance(isVisible ? 0 : widgetAnimation.slideDistance)})`
+      : undefined,
+    widgetAnimation.grow ? `scale(${isVisible ? 1 : widgetAnimation.scale})` : undefined
+  ]);
+  const sidebarTransform = sidebarAnimation.slide
+    ? `translateX(${isVisible ? "0" : formatDistance(sidebarAnimation.slideDistance)})`
+    : undefined;
+  const panelMotionStyle =
+    mode === "widget"
+      ? {
+          ...(widgetAnimation.fade ? { opacity: isVisible ? 1 : 0 } : {}),
+          ...(widgetTransform ? { transform: widgetTransform } : {})
+        }
+      : {
+          ...(sidebarTransform ? { transform: sidebarTransform } : {})
+        };
+  const panelTransitionStyle =
+    shouldAnimate && panelTransition
+      ? { transition: panelTransition, willChange: "transform, opacity" }
+      : {};
+  const overlayBaseStyle =
+    mode === "widget" && panelPlacement === "fixed"
+      ? getStyle("overlay")
+      : mode === "widget"
+      ? getStyle("overlayCenter")
+      : getStyle("overlay");
+  const overlayBackground =
+    typeof overlayBaseStyle.backgroundColor === "string"
+      ? overlayBaseStyle.backgroundColor
+      : typeof overlayBaseStyle.background === "string"
+      ? overlayBaseStyle.background
+      : "transparent";
+  const overlayBackdropStyle = backdropEnabled
+    ? shouldAnimate && backdropFade
+      ? { backgroundColor: isVisible ? overlayBackground : "transparent" }
+      : { backgroundColor: overlayBackground }
+    : { backgroundColor: "transparent" };
+  const overlayTransitionStyle =
+    shouldAnimate && backdropEnabled && backdropFade
+      ? { transition: `background-color ${animationDurationMs}ms ${animationEasing}` }
+      : {};
 
   return (
     <div
@@ -240,16 +354,14 @@ export const Boop = ({ options }: BoopProps) => {
         {buttonLabel}
       </button>
 
-      {isOpen ? (
+      {isRendered ? (
         <div
           className={mergeClassNames("boop-overlay", classNames?.overlay)}
-          style={
-            mode === "widget" && panelPlacement === "fixed"
-              ? getStyle("overlay")
-              : mode === "widget"
-              ? getStyle("overlayCenter")
-              : getStyle("overlay")
-          }
+          style={{
+            ...overlayBaseStyle,
+            ...overlayBackdropStyle,
+            ...overlayTransitionStyle
+          }}
           role="presentation"
           onClick={handleOverlayClick}
         >
@@ -261,7 +373,9 @@ export const Boop = ({ options }: BoopProps) => {
                 ? { position: "fixed", ...(panelFixedOffset ?? {}) }
                 : {}),
               ...(panelWidth ? { maxWidth: panelWidth } : {}),
-              ...(panelMaxHeight ? { maxHeight: panelMaxHeight } : {})
+              ...(panelMaxHeight ? { maxHeight: panelMaxHeight } : {}),
+              ...panelTransitionStyle,
+              ...panelMotionStyle
             }}
             role="dialog"
             aria-modal="true"
@@ -364,6 +478,22 @@ export const Boop = ({ options }: BoopProps) => {
               ) : null}
               {footerSlot}
             </div>
+            {resolvedOptions?.attribution && (
+            <div
+              className={mergeClassNames("boop-attribution", classNames?.attribution)}
+              style={getStyle("attribution")}
+            >
+              Powered by{" "}
+              <a
+                href="https://shtbox.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{color: "inherit"}}
+              >
+                Boop
+              </a>
+            </div>
+            )}
           </div>
         </div>
       ) : null}

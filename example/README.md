@@ -26,4 +26,4 @@ The app will be available at http://localhost:3000
 
 ## Notes
 
-The example imports directly from the source files (`../src`) using a Vite alias, so you can test changes in real-time without rebuilding the package.
+The example imports directly from the source files (`../src`) using a Vite alias, so you can test changes in real-time without rebuilding the package. To avoid Windows symlink restrictions, `@shtbox/boop` is not installed via `file:` in `package.json`.

@@ -12,6 +12,7 @@ export type BoopClassNames = Partial<{
   submit: string;
   close: string;
   footer: string;
+  attribution: string;
 }>;
 
 export type BoopButtonPlacement = "inline" | "fixed";
@@ -38,6 +39,32 @@ export type BoopPanelOptions = Partial<{
   fixedOffset: BoopFixedOffset;
   width: number | string;
   maxHeight: number | string;
+}>;
+
+export type BoopWidgetAnimation = Partial<{
+  fade: boolean;
+  slide: boolean;
+  grow: boolean;
+  slideDistance: number;
+  scale: number;
+}>;
+
+export type BoopSidebarAnimation = Partial<{
+  slide: boolean;
+  slideDistance: number | string;
+}>;
+
+export type BoopAnimationOptions = Partial<{
+  enabled: boolean;
+  durationMs: number;
+  easing: string;
+  widget: BoopWidgetAnimation;
+  sidebar: BoopSidebarAnimation;
+}>;
+
+export type BoopBackdropOptions = Partial<{
+  enabled: boolean;
+  fade: boolean;
 }>;
 
 export type BoopLabels = Partial<{
@@ -71,7 +98,8 @@ export type BoopStyleKey =
   | "textarea"
   | "submit"
   | "close"
-  | "footer";
+  | "footer"
+  | "attribution";
 
 export type BoopBehaviorOptions = Partial<{
   autoOpen: boolean;
@@ -109,6 +137,14 @@ export type BoopSlots = Partial<{
   footer: React.ReactNode;
 }>;
 
+export type BoopSubmitPayload = {
+  name?: string;
+  email?: string;
+  message: string;
+  url?: string;
+  metadata?: Record<string, unknown>;
+};
+
 export type BoopOptions = Partial<{
   endpoint: string;
   darkMode: boolean;
@@ -118,8 +154,11 @@ export type BoopOptions = Partial<{
   behavior: BoopBehaviorOptions;
   callbacks: BoopCallbacks;
   style: BoopStyleOptions;
+  animation: BoopAnimationOptions;
+  backdrop: BoopBackdropOptions;
   metadata: Record<string, unknown>;
   slots: BoopSlots;
+  attribution: boolean;
 }>;
 
 export interface BoopProps {

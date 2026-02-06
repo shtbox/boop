@@ -18,6 +18,7 @@ export type BoopStyles = {
   submit: React.CSSProperties;
   close: React.CSSProperties;
   footer: React.CSSProperties;
+  attribution: React.CSSProperties;
 };
 
 const defaultTheme = (darkMode: boolean) =>
@@ -89,7 +90,7 @@ export const createStyles = (darkMode: boolean): BoopStyles => {
     overlay: {
       position: "fixed",
       inset: 0,
-      background: colors.overlay,
+      backgroundColor: colors.overlay,
       display: "flex",
       justifyContent: "flex-end",
       zIndex: 10000
@@ -97,7 +98,7 @@ export const createStyles = (darkMode: boolean): BoopStyles => {
     overlayCenter: {
       position: "fixed",
       inset: 0,
-      background: colors.overlay,
+      backgroundColor: colors.overlay,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -185,6 +186,14 @@ export const createStyles = (darkMode: boolean): BoopStyles => {
       display: "flex",
       flexDirection: "column" as const,
       gap: 8
+    },
+    attribution: {
+      fontSize: 9,
+      color: colors.mutedText,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 4
     }
   };
 };
