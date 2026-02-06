@@ -1,7 +1,8 @@
-import React, { useEffect, useId, useMemo, useState } from "react";
-import { DEFAULT_ENDPOINT } from "./boop/constants";
+import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { DEFAULT_BUTTON_FIXED_OFFSET, DEFAULT_WIDGET_GAP } from "./boop/constants";
+import { mergeBoopOptions } from "./boop/options";
 import { createStyles, getDefaultTheme } from "./boop/styles";
-import type { BoopProps } from "./boop/types";
+import type { BoopFixedOffset, BoopProps } from "./boop/types";
 import { isValidEmail, mergeClassNames } from "./boop/utils";
 
 type SubmitStatus = {
@@ -9,36 +10,70 @@ type SubmitStatus = {
   message?: string;
 };
 
-export const Boop = ({
-  endpoint = DEFAULT_ENDPOINT,
-  darkMode = false,
-  classNames,
-  styleOverrides,
-  theme,
-  useDefaultStyles = true,
-  buttonPlacement = "inline",
-  fixedOffset,
-  panelVariant = "sidebar",
-  panelWidth,
-  panelMaxHeight,
-  buttonLabel = "Feedback",
-  title = "Send feedback",
-  labels,
-  placeholders,
-  successMessage = "Thanks for the feedback!",
-  errorMessage = "Unable to submit feedback.",
-  autoOpen = false,
-  closeOnSubmit = false,
-  metadata,
-  children,
-  onOpen,
-  onClose,
-  onSubmitStart,
-  onValidationError,
-  onFieldChange,
-  onSubmitSuccess,
-  onSubmitError
-}: BoopProps) => {
+const addOffsetGap = (offset: BoopFixedOffset, gap: number): BoopFixedOffset => ({
+  ...(offset.top !== undefined ? { top: offset.top + gap } : {}),
+  ...(offset.right !== undefined ? { right: offset.right + gap } : {}),
+  ...(offset.bottom !== undefined ? { bottom: offset.bottom + gap } : {}),
+  ...(offset.left !== undefined ? { left: offset.left + gap } : {})
+});
+
+const resolveBaseButtonOffset = (offset?: BoopFixedOffset): BoopFixedOffset => ({
+  ...DEFAULT_BUTTON_FIXED_OFFSET,
+  ...(offset ?? {})
+});
+
+const resolvePanelFixedOffset = (
+  panelOffset: BoopFixedOffset | undefined,
+  buttonOffset: BoopFixedOffset | undefined
+): BoopFixedOffset =>
+  panelOffset ?? addOffsetGap(resolveBaseButtonOffset(buttonOffset), DEFAULT_WIDGET_GAP);
+
+export const Boop = ({ options }: BoopProps) => {
+  const resolvedOptions = useMemo(() => mergeBoopOptions(options), [options]);
+  const {
+    endpoint,
+    darkMode,
+    mode,
+    widgetOptions,
+    sidebarOptions,
+    behavior,
+    callbacks,
+    style,
+    metadata,
+    slots
+  } = resolvedOptions;
+  const variantOptions = mode === "widget" ? widgetOptions : sidebarOptions;
+  const { classNames, styleOverrides, theme, useDefaultStyles } = style;
+  const { autoOpen, closeOnSubmit } = behavior;
+  const {
+    onOpen,
+    onClose,
+    onSubmitStart,
+    onValidationError,
+    onFieldChange,
+    onSubmitSuccess,
+    onSubmitError
+  } = callbacks;
+  const { title, labels, placeholders, button, panel, successMessage, errorMessage } =
+    variantOptions;
+  const rawVariantOptions = mode === "widget" ? options?.widgetOptions : options?.sidebarOptions;
+  const rawPanelPlacement = rawVariantOptions?.panel?.placement;
+  const rawPanelFixedOffset = rawVariantOptions?.panel?.fixedOffset;
+  const buttonLabel = button?.label ?? "Feedback";
+  const buttonPlacement = button?.placement ?? "inline";
+  const buttonFixedOffset = button?.fixedOffset;
+  const panelPlacement =
+    rawPanelPlacement ??
+    (mode === "widget" && (rawPanelFixedOffset || buttonPlacement === "fixed")
+      ? "fixed"
+      : "center");
+  const panelFixedOffset =
+    mode === "widget" && panelPlacement === "fixed"
+      ? resolvePanelFixedOffset(panel?.fixedOffset, buttonFixedOffset)
+      : undefined;
+  const panelWidth = panel?.width;
+  const panelMaxHeight = panel?.maxHeight;
+  const footerSlot = slots.footer;
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<SubmitStatus>({ type: "idle" });
@@ -48,7 +83,10 @@ export const Boop = ({
   const titleId = useId();
 
   const styles = useMemo(() => createStyles(darkMode), [darkMode]);
-  const themeVars = useMemo(() => ({ ...getDefaultTheme(darkMode), ...theme }), [darkMode, theme]);
+  const themeVars = useMemo(
+    () => ({ ...getDefaultTheme(darkMode), ...(theme ?? {}) }),
+    [darkMode, theme]
+  );
 
   const labelText = {
     name: labels?.name ?? "Name",
@@ -77,10 +115,10 @@ export const Boop = ({
     onOpen?.();
   };
 
-  const close = () => {
+  const close = useCallback(() => {
     setIsOpen(false);
     onClose?.();
-  };
+  }, [onClose]);
 
   useEffect(() => {
     if (autoOpen) {
@@ -102,7 +140,7 @@ export const Boop = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
+  }, [close, isOpen]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -189,10 +227,10 @@ export const Boop = ({
             ? {
                 ...(useDefaultStyles
                   ? getStyle("buttonFixed")
-                  : fixedOffset
+                  : buttonFixedOffset
                   ? { position: "fixed", zIndex: 10010 }
                   : {}),
-                ...(fixedOffset ?? {})
+                ...(buttonFixedOffset ?? {})
               }
             : null)
         }}
@@ -206,9 +244,9 @@ export const Boop = ({
         <div
           className={mergeClassNames("boop-overlay", classNames?.overlay)}
           style={
-            panelVariant === "widget" && fixedOffset
+            mode === "widget" && panelPlacement === "fixed"
               ? getStyle("overlay")
-              : panelVariant === "widget"
+              : mode === "widget"
               ? getStyle("overlayCenter")
               : getStyle("overlay")
           }
@@ -218,9 +256,9 @@ export const Boop = ({
           <div
             className={mergeClassNames("boop-panel", classNames?.panel)}
             style={{
-              ...(panelVariant === "widget" ? getStyle("panelWidget") : getStyle("panel")),
-              ...(panelVariant === "widget" && fixedOffset
-                ? { position: "fixed", ...fixedOffset }
+              ...(mode === "widget" ? getStyle("panelWidget") : getStyle("panel")),
+              ...(mode === "widget" && panelPlacement === "fixed"
+                ? { position: "fixed", ...(panelFixedOffset ?? {}) }
                 : {}),
               ...(panelWidth ? { maxWidth: panelWidth } : {}),
               ...(panelMaxHeight ? { maxHeight: panelMaxHeight } : {})
@@ -251,6 +289,7 @@ export const Boop = ({
             <form
               className={mergeClassNames("boop-form", classNames?.form)}
               style={getStyle("form")}
+              noValidate
               onSubmit={handleSubmit}
             >
               <label
@@ -323,7 +362,7 @@ export const Boop = ({
               {status.type !== "idle" ? (
                 <span aria-live="polite">{status.message}</span>
               ) : null}
-              {children}
+              {footerSlot}
             </div>
           </div>
         </div>

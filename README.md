@@ -14,53 +14,134 @@ npm install @shtbox/boop
 import { Boop } from "@shtbox/boop";
 
 export const App = () => (
-  <Boop
-    endpoint="https://boop.shtbox.io"
-    darkMode
-    buttonPlacement="fixed"
-    classNames={{
-      root: "my-boop",
-      panel: "my-boop-panel",
-      button: "my-boop-button"
-    }}
-  />
+  <>
+    {/* Basic: defaults only */}
+    <Boop />
+
+    {/* Advanced: grouped options */}
+    <Boop
+      options={{
+        endpoint: "https://boop.shtbox.io",
+        darkMode: true,
+        mode: "widget",
+        widgetOptions: {
+          title: "Send feedback",
+          button: { label: "Open widget" }
+        },
+        sidebarOptions: {
+          title: "Send feedback",
+          button: { label: "Open sidebar" }
+        },
+        behavior: { closeOnSubmit: true },
+        style: {
+          classNames: {
+            root: "my-boop",
+            panel: "my-boop-panel",
+            button: "my-boop-button"
+          }
+        }
+      }}
+    />
+  </>
 );
 ```
 
+> Breaking change: direct props were removed in favor of the `options` object.
+
 ## Props
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `endpoint` | `string` | `https://boop.shtbox.io` | API endpoint for feedback submissions. |
-| `darkMode` | `boolean` | `false` | Toggles default dark theme styles. |
-| `buttonPlacement` | `"inline" \| "fixed"` | `"inline"` | Place the button inline or fixed to bottom-right. |
-| `fixedOffset` | `{ top?, right?, bottom?, left? }` | `{ right: 24, bottom: 24 }` | Offset for fixed button placement. |
-| `buttonLabel` | `string` | `"Feedback"` | Label for the trigger button. |
-| `panelVariant` | `"sidebar" \| "widget"` | `"sidebar"` | Panel layout style (sidebar or centered widget). |
-| `panelWidth` | `number \| string` | `420` | Panel max width. |
-| `panelMaxHeight` | `number \| string` | `"80vh"` | Panel max height (widget only by default). |
-| `title` | `string` | `"Send feedback"` | Title shown in the panel header. |
-| `labels` | `BoopLabels` | `undefined` | Override field/button labels. |
-| `placeholders` | `BoopPlaceholders` | `undefined` | Override input placeholders. |
-| `successMessage` | `string` | `"Thanks for the feedback!"` | Message shown on success. |
-| `errorMessage` | `string` | `"Unable to submit feedback."` | Message shown on error. |
-| `autoOpen` | `boolean` | `false` | Open the widget on mount. |
-| `closeOnSubmit` | `boolean` | `false` | Close the widget after successful submit. |
-| `metadata` | `Record<string, unknown>` | `undefined` | Extra metadata to send with submissions. |
-| `children` | `ReactNode` | `undefined` | Custom content rendered in the footer area. |
-| `onOpen` | `() => void` | `undefined` | Called when the widget opens. |
-| `onClose` | `() => void` | `undefined` | Called when the widget closes. |
-| `onSubmitStart` | `() => void` | `undefined` | Called when submit starts. |
-| `onValidationError` | `(field, message) => void` | `undefined` | Called when validation fails. |
-| `onFieldChange` | `(field, value) => void` | `undefined` | Called on input changes. |
-| `onSubmitSuccess` | `(response: Response) => void` | `undefined` | Callback after a successful submit. |
-| `onSubmitError` | `(error: Error) => void` | `undefined` | Callback after a failed submit. |
-| `classNames` | `BoopClassNames` | `undefined` | Custom classes for widget parts. |
-| `styleOverrides` | `Partial<Record<BoopStyleKey, CSSProperties>>` | `undefined` | Inline style overrides per part. |
-| `theme` | `Record<string, string>` | `undefined` | CSS variable overrides (e.g. `--boop-button`). |
-| `useDefaultStyles` | `boolean` | `true` | Disable built-in inline styles when false. |
+`<Boop />` supports a single prop: `options?: BoopOptions`.
+
+### BoopOptions
+
+```
+{
+  endpoint?: string,
+  darkMode?: boolean,
+  mode?: "sidebar" | "widget",
+  widgetOptions?: BoopVariantOptions,
+  sidebarOptions?: BoopVariantOptions,
+  behavior?: BoopBehaviorOptions,
+  callbacks?: BoopCallbacks,
+  style?: BoopStyleOptions,
+  metadata?: Record<string, unknown>,
+  slots?: BoopSlots
+}
+```
+
+### BoopVariantOptions
+
+```
+{
+  title?: string,
+  labels?: BoopLabels,
+  placeholders?: BoopPlaceholders,
+  button?: {
+    label?: string,
+    placement?: "inline" | "fixed",
+    fixedOffset?: { top?, right?, bottom?, left? }
+  },
+  panel?: {
+    placement?: "center" | "fixed",
+    fixedOffset?: { top?, right?, bottom?, left? },
+    width?: number | string,
+    maxHeight?: number | string
+  },
+  successMessage?: string,
+  errorMessage?: string
+}
+```
+
+When `mode` is `"widget"`, the panel defaults to `"fixed"` if the button is fixed or
+`panel.fixedOffset` is set. If the panel is fixed and no `panel.fixedOffset` is
+provided, the panel offset is derived from the button offset plus a 24px gap
+(default button offset is 24px).
+
+### BoopBehaviorOptions
+
+```
+{
+  autoOpen?: boolean,
+  closeOnSubmit?: boolean
+}
+```
+
+### BoopCallbacks
+
+```
+{
+  onOpen?: () => void,
+  onClose?: () => void,
+  onSubmitStart?: () => void,
+  onValidationError?: (field, message) => void,
+  onFieldChange?: (field, value) => void,
+  onSubmitSuccess?: (response: Response) => void,
+  onSubmitError?: (error: Error) => void
+}
+```
+
+### BoopStyleOptions
+
+```
+{
+  classNames?: BoopClassNames,
+  styleOverrides?: Partial<Record<BoopStyleKey, CSSProperties>>,
+  theme?: Record<string, string>,
+  useDefaultStyles?: boolean
+}
+```
+
+### BoopSlots
+
+```
+{
+  footer?: ReactNode
+}
+```
 
 ### classNames
+
+Use `options.style.classNames` to target these parts:
 
 ```
 root, button, overlay, panel, header, form, field, textarea, submit, close, footer
@@ -68,7 +149,7 @@ root, button, overlay, panel, header, form, field, textarea, submit, close, foot
 
 ### theme
 
-Supported CSS variables:
+Use `options.style.theme` to override CSS variables:
 
 ```
 --boop-background

@@ -46,5 +46,14 @@ export default [
     rules: {
       "react-hooks/exhaustive-deps": "off"
     }
+  },
+  {
+    files: ["**/*.{cjs,js}"],
+    languageOptions: {
+      globals: {
+        ...globals.node
+      },
+      sourceType: "script"
+    }
   }
 ];

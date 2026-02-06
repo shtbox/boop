@@ -15,6 +15,7 @@ export type BoopClassNames = Partial<{
 }>;
 
 export type BoopButtonPlacement = "inline" | "fixed";
+export type BoopPanelPlacement = "center" | "fixed";
 export type BoopPanelVariant = "sidebar" | "widget";
 
 export type BoopFieldName = "name" | "email" | "message";
@@ -24,6 +25,19 @@ export type BoopFixedOffset = Partial<{
   right: number;
   bottom: number;
   left: number;
+}>;
+
+export type BoopButtonOptions = Partial<{
+  label: string;
+  placement: BoopButtonPlacement;
+  fixedOffset: BoopFixedOffset;
+}>;
+
+export type BoopPanelOptions = Partial<{
+  placement: BoopPanelPlacement;
+  fixedOffset: BoopFixedOffset;
+  width: number | string;
+  maxHeight: number | string;
 }>;
 
 export type BoopLabels = Partial<{
@@ -59,33 +73,55 @@ export type BoopStyleKey =
   | "close"
   | "footer";
 
+export type BoopBehaviorOptions = Partial<{
+  autoOpen: boolean;
+  closeOnSubmit: boolean;
+}>;
+
+export type BoopCallbacks = Partial<{
+  onOpen: () => void;
+  onClose: () => void;
+  onSubmitStart: () => void;
+  onValidationError: (field: BoopFieldName, message: string) => void;
+  onFieldChange: (field: BoopFieldName, value: string) => void;
+  onSubmitSuccess: (response: Response) => void;
+  onSubmitError: (error: Error) => void;
+}>;
+
+export type BoopVariantOptions = Partial<{
+  title: string;
+  labels: BoopLabels;
+  placeholders: BoopPlaceholders;
+  button: BoopButtonOptions;
+  panel: BoopPanelOptions;
+  successMessage: string;
+  errorMessage: string;
+}>;
+
+export type BoopStyleOptions = Partial<{
+  classNames: BoopClassNames;
+  styleOverrides: Partial<Record<BoopStyleKey, React.CSSProperties>>;
+  theme: BoopTheme;
+  useDefaultStyles: boolean;
+}>;
+
+export type BoopSlots = Partial<{
+  footer: React.ReactNode;
+}>;
+
+export type BoopOptions = Partial<{
+  endpoint: string;
+  darkMode: boolean;
+  mode: BoopPanelVariant;
+  widgetOptions: BoopVariantOptions;
+  sidebarOptions: BoopVariantOptions;
+  behavior: BoopBehaviorOptions;
+  callbacks: BoopCallbacks;
+  style: BoopStyleOptions;
+  metadata: Record<string, unknown>;
+  slots: BoopSlots;
+}>;
+
 export interface BoopProps {
-  endpoint?: string;
-  darkMode?: boolean;
-  classNames?: BoopClassNames;
-  styleOverrides?: Partial<Record<BoopStyleKey, React.CSSProperties>>;
-  theme?: BoopTheme;
-  useDefaultStyles?: boolean;
-  buttonPlacement?: BoopButtonPlacement;
-  fixedOffset?: BoopFixedOffset;
-  panelVariant?: BoopPanelVariant;
-  panelWidth?: number | string;
-  panelMaxHeight?: number | string;
-  buttonLabel?: string;
-  title?: string;
-  labels?: BoopLabels;
-  placeholders?: BoopPlaceholders;
-  successMessage?: string;
-  errorMessage?: string;
-  autoOpen?: boolean;
-  closeOnSubmit?: boolean;
-  metadata?: Record<string, unknown>;
-  children?: React.ReactNode;
-  onOpen?: () => void;
-  onClose?: () => void;
-  onSubmitStart?: () => void;
-  onValidationError?: (field: BoopFieldName, message: string) => void;
-  onFieldChange?: (field: BoopFieldName, value: string) => void;
-  onSubmitSuccess?: (response: Response) => void;
-  onSubmitError?: (error: Error) => void;
+  options?: BoopOptions;
 }

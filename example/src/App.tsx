@@ -9,8 +9,10 @@ const App = () => {
   const [buttonLabel, setButtonLabel] = useState("Open Boop");
   const [panelWidth, setPanelWidth] = useState(420);
   const [panelMaxHeight, setPanelMaxHeight] = useState(80);
-  const [offsetRight, setOffsetRight] = useState(24);
-  const [offsetBottom, setOffsetBottom] = useState(24);
+  const [buttonOffsetRight, setButtonOffsetRight] = useState(24);
+  const [buttonOffsetBottom, setButtonOffsetBottom] = useState(24);
+  const [panelOffsetRight, setPanelOffsetRight] = useState(48);
+  const [panelOffsetBottom, setPanelOffsetBottom] = useState(48);
   const [useDefaultStyles, setUseDefaultStyles] = useState(true);
   const [closeOnSubmit, setCloseOnSubmit] = useState(false);
 
@@ -81,21 +83,39 @@ const App = () => {
               />
             </label>
             <label className="field">
-              Fixed offset right (px)
+              Button offset right (px)
               <input
                 type="number"
                 min={0}
-                value={offsetRight}
-                onChange={(event) => setOffsetRight(Number(event.target.value))}
+                value={buttonOffsetRight}
+                onChange={(event) => setButtonOffsetRight(Number(event.target.value))}
               />
             </label>
             <label className="field">
-              Fixed offset bottom (px)
+              Button offset bottom (px)
               <input
                 type="number"
                 min={0}
-                value={offsetBottom}
-                onChange={(event) => setOffsetBottom(Number(event.target.value))}
+                value={buttonOffsetBottom}
+                onChange={(event) => setButtonOffsetBottom(Number(event.target.value))}
+              />
+            </label>
+            <label className="field">
+              Panel offset right (px)
+              <input
+                type="number"
+                min={0}
+                value={panelOffsetRight}
+                onChange={(event) => setPanelOffsetRight(Number(event.target.value))}
+              />
+            </label>
+            <label className="field">
+              Panel offset bottom (px)
+              <input
+                type="number"
+                min={0}
+                value={panelOffsetBottom}
+                onChange={(event) => setPanelOffsetBottom(Number(event.target.value))}
               />
             </label>
             <label className="field checkbox-field">
@@ -116,16 +136,40 @@ const App = () => {
             </label>
           </div>
           <Boop
-            endpoint="https://boop.shtbox.io"
-            darkMode={darkMode}
-            buttonPlacement={buttonPlacement}
-            panelVariant={panelVariant}
-            buttonLabel={buttonLabel}
-            panelWidth={panelWidth}
-            panelMaxHeight={`${panelMaxHeight}vh`}
-            fixedOffset={{ right: offsetRight, bottom: offsetBottom }}
-            useDefaultStyles={useDefaultStyles}
-            closeOnSubmit={closeOnSubmit}
+            options={{
+              endpoint: "https://boop.shtbox.io",
+              darkMode,
+              mode: panelVariant,
+              behavior: { closeOnSubmit },
+              style: { useDefaultStyles },
+              widgetOptions: {
+                button: {
+                  placement: buttonPlacement,
+                  label: buttonLabel,
+                  fixedOffset: {
+                    right: buttonOffsetRight,
+                    bottom: buttonOffsetBottom
+                  }
+                },
+                panel: {
+                  width: panelWidth,
+                  maxHeight: `${panelMaxHeight}vh`,
+                  fixedOffset: {
+                    right: panelOffsetRight,
+                    bottom: panelOffsetBottom
+                  }
+                }
+              },
+              sidebarOptions: {
+                button: {
+                  placement: buttonPlacement,
+                  label: buttonLabel
+                },
+                panel: {
+                  width: panelWidth
+                }
+              }
+            }}
           />
         </div>
 
@@ -134,10 +178,16 @@ const App = () => {
             <h2>Inline Button</h2>
             <p>Button placed inline in the page flow</p>
             <Boop
-              endpoint="https://boop.shtbox.io"
-              darkMode={darkMode}
-              buttonPlacement="inline"
-              buttonLabel="Send Feedback"
+              options={{
+                endpoint: "https://boop.shtbox.io",
+                darkMode,
+                sidebarOptions: {
+                  button: {
+                    placement: "inline",
+                    label: "Send Feedback"
+                  }
+                }
+              }}
             />
           </div>
 
@@ -145,10 +195,16 @@ const App = () => {
             <h2>Fixed Button</h2>
             <p>Button fixed to bottom-right corner</p>
             <Boop
-              endpoint="https://boop.shtbox.io"
-              darkMode={darkMode}
-              buttonPlacement="fixed"
-              buttonLabel="Feedback"
+              options={{
+                endpoint: "https://boop.shtbox.io",
+                darkMode,
+                sidebarOptions: {
+                  button: {
+                    placement: "fixed",
+                    label: "Feedback"
+                  }
+                }
+              }}
             />
           </div>
 
@@ -156,25 +212,43 @@ const App = () => {
             <h2>Custom Styling</h2>
             <p>With custom class names</p>
             <Boop
-              endpoint="https://boop.shtbox.io"
-              darkMode={darkMode}
-              buttonPlacement="inline"
-              classNames={{
-                button: "custom-feedback-button",
-                panel: "custom-feedback-panel"
+              options={{
+                endpoint: "https://boop.shtbox.io",
+                darkMode,
+                style: {
+                  classNames: {
+                    button: "custom-feedback-button",
+                    panel: "custom-feedback-panel"
+                  }
+                },
+                sidebarOptions: {
+                  button: {
+                    placement: "inline"
+                  }
+                }
               }}
             />
           </div>
 
           <div className={`example-card ${darkMode ? "dark" : ""}`}>
             <h2>Widget Panel</h2>
-            <p>Centered widget panel layout</p>
+            <p>Fixed widget panel layout</p>
             <Boop
-              endpoint="https://boop.shtbox.io"
-              darkMode={darkMode}
-              buttonPlacement="inline"
-              panelVariant="widget"
-              buttonLabel="Open Widget"
+              options={{
+                endpoint: "https://boop.shtbox.io",
+                darkMode,
+                mode: "widget",
+                widgetOptions: {
+                  button: {
+                    placement: "inline",
+                    label: "Open Widget"
+                  },
+                  panel: {
+                    placement: "fixed",
+                    fixedOffset: { right: 48, bottom: 48 }
+                  }
+                }
+              }}
             />
           </div>
         </div>
@@ -186,10 +260,16 @@ const App = () => {
 
       {/* Fixed button example - rendered outside container */}
       <Boop
-        endpoint="https://boop.shtbox.io"
-        darkMode={darkMode}
-        buttonPlacement="fixed"
-        buttonLabel="💬 Feedback"
+        options={{
+          endpoint: "https://boop.shtbox.io",
+          darkMode,
+          sidebarOptions: {
+            button: {
+              placement: "fixed",
+              label: "💬 Feedback"
+            }
+          }
+        }}
       />
     </div>
   );
