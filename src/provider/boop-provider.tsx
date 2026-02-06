@@ -37,7 +37,8 @@ export const BoopProvider = ({ children, defaultOptions }: BoopProviderProps) =>
         endpoint: resolved.endpoint,
         callbacks: resolved.callbacks,
         metadata: resolved.metadata,
-        payload
+        payload,
+        urlResolver: resolved.urlResolver
       });
     },
     [options]

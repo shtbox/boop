@@ -15,6 +15,7 @@ export type {
   BoopSidebarAnimation,
   BoopAnimationOptions,
   BoopBackdropOptions,
+  BoopUrlResolver,
   BoopStyleKey,
   BoopBehaviorOptions,
   BoopCallbacks,
@@ -26,3 +27,4 @@ export type {
 } from "./boop/types";
 
 export { BoopProvider, useBoop } from "./provider/boop-provider";
+export { defaultUrlResolver, resolveUrlFromLocation } from "./boop/url";

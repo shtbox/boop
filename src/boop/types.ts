@@ -145,6 +145,8 @@ export type BoopSubmitPayload = {
   metadata?: Record<string, unknown>;
 };
 
+export type BoopUrlResolver = () => string | undefined;
+
 export type BoopOptions = Partial<{
   endpoint: string;
   darkMode: boolean;
@@ -156,6 +158,7 @@ export type BoopOptions = Partial<{
   style: BoopStyleOptions;
   animation: BoopAnimationOptions;
   backdrop: BoopBackdropOptions;
+  urlResolver: BoopUrlResolver;
   metadata: Record<string, unknown>;
   slots: BoopSlots;
   attribution: boolean;

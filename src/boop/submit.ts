@@ -1,4 +1,5 @@
-import type { BoopCallbacks, BoopSubmitPayload } from "./types";
+import type { BoopCallbacks, BoopSubmitPayload, BoopUrlResolver } from "./types";
+import { defaultUrlResolver } from "./url";
 import { isValidEmail } from "./utils";
 
 export type BoopSubmitRequest = {
@@ -6,13 +7,15 @@ export type BoopSubmitRequest = {
   payload: BoopSubmitPayload;
   callbacks?: BoopCallbacks;
   metadata?: Record<string, unknown>;
+  urlResolver?: BoopUrlResolver;
 };
 
 export const submitBoopFeedback = async ({
   endpoint,
   payload,
   callbacks,
-  metadata
+  metadata,
+  urlResolver
 }: BoopSubmitRequest): Promise<Response> => {
   const message = payload.message?.trim();
 
@@ -35,7 +38,7 @@ export const submitBoopFeedback = async ({
       ? { ...(metadata ?? {}), ...(payload.metadata ?? {}) }
       : undefined;
   const resolvedUrl =
-    payload.url ?? (typeof window !== "undefined" ? window.location.href : undefined);
+    payload.url ?? urlResolver?.() ?? defaultUrlResolver();
 
   try {
     const response = await fetch(endpoint, {

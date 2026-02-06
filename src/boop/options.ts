@@ -10,7 +10,8 @@ import type {
   BoopStyleOptions,
   BoopVariantOptions,
   BoopSlots,
-  BoopPanelVariant
+  BoopPanelVariant,
+  BoopUrlResolver
 } from "./types";
 
 export type ResolvedBoopOptions = {
@@ -24,6 +25,7 @@ export type ResolvedBoopOptions = {
   backdrop: BoopBackdropOptions;
   callbacks: BoopCallbacks;
   style: BoopStyleOptions;
+  urlResolver?: BoopUrlResolver;
   metadata?: Record<string, unknown>;
   slots: BoopSlots;
   attribution: boolean;
@@ -164,6 +166,7 @@ export const combineBoopOptions = (
   backdrop: { ...(base?.backdrop ?? {}), ...(overrides?.backdrop ?? {}) },
   callbacks: { ...(base?.callbacks ?? {}), ...(overrides?.callbacks ?? {}) },
   style: mergeStyleOptions(base?.style ?? {}, overrides?.style),
+  urlResolver: overrides?.urlResolver ?? base?.urlResolver,
   metadata: mergeMetadata(base?.metadata, overrides?.metadata),
   slots: { ...(base?.slots ?? {}), ...(overrides?.slots ?? {}) },
   attribution: base?.attribution ?? overrides?.attribution ?? true
@@ -186,6 +189,7 @@ export const mergeBoopOptions = (options?: BoopOptions): ResolvedBoopOptions => 
   backdrop: { ...defaultBackdropOptions, ...(options?.backdrop ?? {}) },
   callbacks: { ...(options?.callbacks ?? {}) },
   style: mergeStyleOptions(defaultStyleOptions, options?.style),
+  urlResolver: options?.urlResolver,
   metadata: options?.metadata,
   slots: { ...(options?.slots ?? {}) },
   attribution: options?.attribution ?? true

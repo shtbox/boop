@@ -110,6 +110,7 @@ export const App = () => (
   style?: BoopStyleOptions,
   animation?: BoopAnimationOptions,
   backdrop?: BoopBackdropOptions,
+  urlResolver?: () => string | undefined,
   metadata?: Record<string, unknown>,
   slots?: BoopSlots
 }
@@ -212,6 +213,27 @@ right. Set `enabled: false` to disable animation.
 
 `enabled: false` disables the dimmed backdrop. `fade` controls backdrop fade when
 animations are enabled.
+
+### urlResolver
+
+Use this to provide the current URL in environments where `window.location.href`
+isn’t available (SSR) or when you need custom routing logic.
+
+```tsx
+<Boop
+  options={{
+    urlResolver: () => (typeof window !== "undefined" ? window.location.href : undefined)
+  }}
+/>
+```
+
+You can also use the built-in helper for safer URL resolution:
+
+```tsx
+import { defaultUrlResolver } from "@shtbox/boop";
+
+<Boop options={{ urlResolver: defaultUrlResolver }} />;
+```
 
 ### BoopSlots
 

@@ -42,6 +42,7 @@ export const Boop = ({ options }: BoopProps) => {
     backdrop,
     callbacks,
     style,
+    urlResolver,
     metadata,
     slots
   } = resolvedOptions;
@@ -134,7 +135,8 @@ export const Boop = ({ options }: BoopProps) => {
         endpoint,
         callbacks,
         metadata,
-        payload
+        payload,
+        urlResolver
       });
       setStatus({ type: "success", message: successMessage });
       setMessage("");
