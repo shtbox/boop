@@ -42,7 +42,7 @@
     "bump:pre:minor": "npm version preminor --tag-version-prefix v -m \"chore(release): v%s\"",
     "bump:pre:major": "npm version premajor --tag-version-prefix v -m \"chore(release): v%s\"",
     "bump:pre:release": "npm version prerelease --tag-version-prefix v -m \"chore(release): v%s\"",
-    "release": "npm run build && npm publish --access public",
+    "deploy": "npm run build && npm publish --access public",
     "prepack": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
