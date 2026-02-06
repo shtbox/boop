@@ -1,59 +1,37 @@
+
 # @shtbox/boop
 
 Embeddable feedback widget for React websites. Built for Shtbox.io (ShotBox).
 
 ## Install
 
-```bash
 npm install @shtbox/boop
-```
 
-## Usage
+## Quick start
 
-```tsx
+Boop is intentionally small. Drop in <Boop /> and you are done.
+````Typescript
 import { Boop } from "@shtbox/boop";
+export const App = () => <Boop />;
+````
+Breaking change: direct props were removed in favour of the options object.
 
-export const App = () => (
-  <>
-    {/* Basic: defaults only */}
-    <Boop />
+## Why Boop
 
-    {/* Advanced: grouped options */}
-    <Boop
-      options={{
-        endpoint: "https://boop.shtbox.io",
-        darkMode: true,
-        mode: "widget",
-        widgetOptions: {
-          title: "Send feedback",
-          button: { label: "Open widget" }
-        },
-        sidebarOptions: {
-          title: "Send feedback",
-          button: { label: "Open sidebar" }
-        },
-        behavior: { closeOnSubmit: true },
-        style: {
-          classNames: {
-            root: "my-boop",
-            panel: "my-boop-panel",
-            button: "my-boop-button"
-          }
-        }
-      }}
-    />
-  </>
-);
-```
-
-> Breaking change: direct props were removed in favor of the `options` object.
+- Ship a feedback widget in minutes, not days
+- Works with any React app, no extra routing
+- Customise when you need it, ignore it when you do not
 
 ## Provider (optional)
 
-You can centralize defaults and update them per page/route with a provider. Component
-`options` still work and override provider options.
+If you need central defaults or runtime updates, wrap once with the provider. This allows you to:
 
-```tsx
+- Set global defaults
+- Update options per page or route
+- Submit feedback programmatically
+
+Component-level options always override provider defaults.
+````Typescript
 import { Boop, BoopProvider, useBoop } from "@shtbox/boop";
 
 const Page = () => {
@@ -70,6 +48,7 @@ const Page = () => {
       >
         Update label
       </button>
+
       <button
         onClick={() =>
           submitFeedback({
@@ -90,19 +69,49 @@ export const App = () => (
     <Boop options={{ mode: "widget" }} />
   </BoopProvider>
 );
-```
+````
+## Advanced
 
-## Props
+Everything is configured through a single prop:
 
-`<Boop />` supports a single prop: `options?: BoopOptions`.
+`options?: BoopOptions`
 
-### BoopOptions
+### Mental model
 
-```
+- `<Boop />` renders the widget or sidebar UI
+- `options` configures everything (styling, behavior, callbacks, payload extras)
+- `BoopProvider` is optional and provides shared defaults plus runtime updates
+
+### Options and how they combine
+
+#### Option merge order
+
+- Provider defaults merge with component `options`
+- Component `options` win over provider defaults
+- Nested objects are merged shallowly (ex: `style.theme`, `widgetOptions.labels`)
+
+#### `mode` + `widgetOptions` + `sidebarOptions`
+
+- `mode` selects which variant is active: `"widget"` or `"sidebar"`
+- Both `widgetOptions` and `sidebarOptions` can be set. Only the active
+  variant is rendered, so you can switch `mode` without reconfiguring labels,
+  buttons, or panels
+- For widgets, panel placement is derived from the button unless you override it:
+  - A fixed button implies a fixed panel
+  - If the panel is fixed and no `panel.fixedOffset` is provided, the panel
+    offset is derived from the button offset plus a 24px gap
+
+### Full option reference
+
+All options are passed under a single prop: `options?: BoopOptions`.
+
+#### `BoopOptions`
+
+```ts
 {
-  endpoint?: string,
-  darkMode?: boolean,
-  mode?: "sidebar" | "widget",
+  endpoint?: string,                // Default: https://boop.shtbox.io/api/feedback
+  darkMode?: boolean,               // Default: false
+  mode?: "sidebar" | "widget",      // Default: "sidebar"
   widgetOptions?: BoopVariantOptions,
   sidebarOptions?: BoopVariantOptions,
   behavior?: BoopBehaviorOptions,
@@ -111,53 +120,49 @@ export const App = () => (
   animation?: BoopAnimationOptions,
   backdrop?: BoopBackdropOptions,
   urlResolver?: () => string | undefined,
-  includeStackTrace?: boolean,
+  includeStackTrace?: boolean,      // Default: false
   onSuccessRenderer?: (payload, helpers) => ReactNode,
   metadata?: Record<string, unknown>,
-  slots?: BoopSlots
+  slots?: BoopSlots,
+  attribution?: boolean             // Default: true
 }
 ```
 
-### BoopVariantOptions
+#### `BoopVariantOptions`
 
-```
+```ts
 {
-  title?: string,
-  labels?: BoopLabels,
-  placeholders?: BoopPlaceholders,
+  title?: string,                   // Default: "Feedback"
+  labels?: BoopLabels,              // Form field labels
+  placeholders?: BoopPlaceholders,  // Input placeholders
   button?: {
-    label?: string,
-    placement?: "inline" | "fixed",
+    label?: string,                 // Default: "Feedback"
+    placement?: "inline" | "fixed", // Default: "inline"
     fixedOffset?: { top?, right?, bottom?, left? }
   },
   panel?: {
-    placement?: "center" | "fixed",
+    placement?: "center" | "fixed", // Default: "center"
     fixedOffset?: { top?, right?, bottom?, left? },
-    width?: number | string,
-    maxHeight?: number | string
+    width?: number | string,        // Default: 420 (sidebar max width)
+    maxHeight?: number | string     // Default: "80vh" for widget panels
   },
-  successMessage?: string,
-  errorMessage?: string
+  successMessage?: string,          // Default: "Your feedback has been submitted successfully."
+  errorMessage?: string             // Default: "Unable to submit feedback."
 }
 ```
 
-When `mode` is `"widget"`, the panel defaults to `"fixed"` if the button is fixed or
-`panel.fixedOffset` is set. If the panel is fixed and no `panel.fixedOffset` is
-provided, the panel offset is derived from the button offset plus a 24px gap
-(default button offset is 24px).
+#### `BoopBehaviorOptions`
 
-### BoopBehaviorOptions
-
-```
+```ts
 {
-  autoOpen?: boolean,
-  closeOnSubmit?: boolean
+  autoOpen?: boolean,    // Default: false
+  closeOnSubmit?: boolean // Default: false
 }
 ```
 
-### BoopCallbacks
+#### `BoopCallbacks`
 
-```
+```ts
 {
   onOpen?: () => void,
   onClose?: () => void,
@@ -169,118 +174,154 @@ provided, the panel offset is derived from the button offset plus a 24px gap
 }
 ```
 
-### BoopStyleOptions
+#### `BoopStyleOptions`
 
-```
+```ts
 {
   classNames?: BoopClassNames,
   styleOverrides?: Partial<Record<BoopStyleKey, CSSProperties>>,
   theme?: Record<string, string>,
-  useDefaultStyles?: boolean
+  useDefaultStyles?: boolean // Default: true
 }
 ```
 
-### BoopAnimationOptions
+#### `BoopAnimationOptions`
 
-```
+```ts
 {
-  enabled?: boolean,
-  durationMs?: number,
-  easing?: string,
+  enabled?: boolean,     // Default: true
+  durationMs?: number,   // Default: 220
+  easing?: string,       // Default: cubic-bezier(0.22, 1, 0.36, 1)
   widget?: {
-    fade?: boolean,
-    slide?: boolean,
-    grow?: boolean,
-    slideDistance?: number,
-    scale?: number
+    fade?: boolean,       // Default: true
+    slide?: boolean,      // Default: true
+    grow?: boolean,       // Default: true
+    slideDistance?: number, // Default: 12
+    scale?: number        // Default: 0.98
   },
   sidebar?: {
-    slide?: boolean,
-    slideDistance?: number | string
+    slide?: boolean,        // Default: true
+    slideDistance?: number | string // Default: "100%"
   }
 }
 ```
 
-Defaults to animated. Widgets fade, slide up, and grow in; sidebars slide in from the
-right. Set `enabled: false` to disable animation.
+#### `BoopBackdropOptions`
 
-### BoopBackdropOptions
-
-```
+```ts
 {
-  enabled?: boolean,
-  fade?: boolean
+  enabled?: boolean,  // Default: true
+  fade?: boolean      // Default: true
 }
 ```
 
-`enabled: false` disables the dimmed backdrop. `fade` controls backdrop fade when
-animations are enabled.
+#### `BoopSlots`
 
-### urlResolver
+```ts
+{
+  footer?: ReactNode
+}
+```
 
-Use this to provide the current URL in environments where `window.location.href`
-isn’t available (SSR) or when you need custom routing logic.
+### Messages and labels
+
+You can customize everything the user sees via `labels`, `placeholders`,
+`successMessage`, and `errorMessage`.
 
 ```tsx
 <Boop
   options={{
-    urlResolver: () => (typeof window !== "undefined" ? window.location.href : undefined)
+    widgetOptions: {
+      title: "Send us a note",
+      labels: {
+        name: "Your name",
+        email: "Work email",
+        message: "What went wrong?",
+        submit: "Send it",
+        close: "Close"
+      },
+      placeholders: {
+        name: "Ada Lovelace",
+        email: "ada@example.com",
+        message: "The save button stops working after..."
+      },
+      successMessage: "Thanks for the feedback!",
+      errorMessage: "Something went wrong. Please try again."
+    }
   }}
 />
 ```
 
-You can also use the built-in helper for safer URL resolution:
+### Events and callbacks
+
+Use callbacks to connect analytics, telemetry, or UI behaviors.
 
 ```tsx
-import { defaultUrlResolver } from "@shtbox/boop";
-
-<Boop options={{ urlResolver: defaultUrlResolver }} />;
+<Boop
+  options={{
+    callbacks: {
+      onOpen: () => track("boop_open"),
+      onClose: () => track("boop_close"),
+      onFieldChange: (field, value) => setLastEdited(field),
+      onValidationError: (field, message) =>
+        console.warn(`${field} validation failed: ${message}`),
+      onSubmitStart: () => track("boop_submit_start"),
+      onSubmitSuccess: (response) => track("boop_submit_success", response.status),
+      onSubmitError: (error) => track("boop_submit_error", error.message)
+    }
+  }}
+/>
 ```
 
-### includeStackTrace
+### Custom thank-you renderer
 
-When enabled, Boop captures a small, recent console buffer and a stack trace snapshot
-and sends them in `metadata.stack`. The buffer is capped and not configurable to keep
-the surface minimal.
-
-### onSuccessRenderer
-
-Override the default thank-you view with a custom renderer. It receives the submitted
-payload and helpers to close the widget or reset back to the form.
+Replace the default success message with a custom render, including links or
+next steps.
 
 ```tsx
 <Boop
   options={{
     onSuccessRenderer: (payload, helpers) => (
       <div>
-        <p>Thanks {payload.name || "there"}!</p>
-        <button onClick={helpers.reset}>Send another</button>
-        <button onClick={helpers.close}>Close</button>
+        <h3>Thanks {payload.name || "there"}!</h3>
+        <p>We read every message.</p>
+        <a href="/changelog">See recent fixes</a>
+        <div>
+          <button onClick={helpers.reset}>Send another</button>
+          <button onClick={helpers.close}>Close</button>
+        </div>
       </div>
     )
   }}
 />
 ```
 
-### BoopSlots
+### Custom styles
+
+You can style Boop in three ways, and mix them together:
+
+- `classNames` to attach CSS classes (ideal for frameworks)
+- `styleOverrides` to surgically override individual elements
+- `theme` to control colors via CSS variables
+
+If you want full control, set `useDefaultStyles: false`.
+
+#### Targetable class names
 
 ```
-{
-  footer?: ReactNode
-}
+root, button, overlay, panel, header, form, field, textarea, submit, close, footer,
+attribution, errorMessageContainer, errorMessage
 ```
 
-### classNames
-
-Use `options.style.classNames` to target these parts:
+#### Style override keys
 
 ```
-root, button, overlay, panel, header, form, field, textarea, submit, close, footer, attribution
+root, button, buttonFixed, overlay, overlayCenter, panel, panelWidget, header, form,
+field, input, textarea, submit, close, footer, attribution, errorMessageContainer,
+errorMessage
 ```
 
-### theme
-
-Use `options.style.theme` to override CSS variables:
+#### Theme variables
 
 ```
 --boop-background
@@ -292,13 +333,139 @@ Use `options.style.theme` to override CSS variables:
 --boop-button-text
 --boop-overlay
 --boop-input-bg
+--boop-error-message-bg
 ```
 
-## Payload
+#### Example: Bootstrap
+
+```tsx
+<Boop
+  options={{
+    style: {
+      useDefaultStyles: false,
+      classNames: {
+        panel: "card shadow",
+        header: "card-header d-flex justify-content-between align-items-center",
+        form: "card-body d-flex flex-column gap-3",
+        field: "form-group",
+        textarea: "form-control",
+        submit: "btn btn-primary",
+        close: "btn-close",
+        errorMessage: "alert alert-danger py-2",
+        footer: "card-footer small text-muted"
+      },
+      theme: {
+        "--boop-button": "var(--bs-primary)",
+        "--boop-button-text": "var(--bs-white)"
+      }
+    }
+  }}
+/>
+```
+
+#### Example: shadcn/tailwind
+
+```tsx
+<Boop
+  options={{
+    style: {
+      useDefaultStyles: false,
+      classNames: {
+        panel: "bg-background text-foreground border rounded-xl shadow-xl",
+        header: "flex items-center justify-between",
+        form: "flex flex-col gap-3",
+        field: "text-sm text-muted-foreground flex flex-col gap-1",
+        textarea:
+          "min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm",
+        submit:
+          "inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-primary-foreground",
+        close: "text-muted-foreground hover:text-foreground",
+        errorMessage: "rounded-md bg-destructive/10 px-3 py-2 text-destructive",
+        footer: "text-xs text-muted-foreground"
+      },
+      theme: {
+        "--boop-background": "hsl(var(--background))",
+        "--boop-panel": "hsl(var(--card))",
+        "--boop-text": "hsl(var(--foreground))",
+        "--boop-muted-text": "hsl(var(--muted-foreground))",
+        "--boop-border": "hsl(var(--border))",
+        "--boop-button": "hsl(var(--primary))",
+        "--boop-button-text": "hsl(var(--primary-foreground))",
+        "--boop-input-bg": "hsl(var(--background))",
+        "--boop-overlay": "rgba(15, 23, 42, 0.35)"
+      }
+    }
+  }}
+/>
+```
+
+### Links and custom content
+
+Boop does not render user-entered message content as HTML. If you need links or
+rich content in the UI, use `onSuccessRenderer` or `slots.footer` to render the
+elements you want.
+
+### Footer slot
+
+```tsx
+<Boop
+  options={{
+    slots: {
+      footer: (
+        <div>
+          Questions? <a href="mailto:support@yourapp.com">Email us</a>
+        </div>
+      )
+    }
+  }}
+/>
+```
+
+### URL resolution (SSR and custom routing)
+
+By default, Boop uses `window.location.href` when available. Override this in
+SSR or if your routing strategy needs a custom URL.
+
+```tsx
+import { defaultUrlResolver } from "@shtbox/boop";
+
+<Boop options={{ urlResolver: defaultUrlResolver }} />;
+```
+
+### Stack trace capture
+
+Enable `includeStackTrace` to attach recent console history and stack snapshot
+to `metadata.stack`. If you already send `metadata.stack`, Boop will not
+overwrite it.
+
+```tsx
+<Boop options={{ includeStackTrace: true }} />
+```
+
+### Programmatic submit (provider)
+
+Use `submitFeedback` to send feedback without opening the UI. This uses the
+provider options and you can pass overrides if needed.
+
+```tsx
+const { submitFeedback } = useBoop();
+
+await submitFeedback(
+  {
+    message: "Love this!",
+    email: "ada@example.com"
+  },
+  {
+    metadata: { plan: "pro" }
+  }
+);
+```
+
+### Payload
 
 The widget submits the following JSON payload:
 
-```json
+````JSON
 {
   "url": "https://your-site.com/page",
   "name": "Ada Lovelace",
@@ -306,8 +473,7 @@ The widget submits the following JSON payload:
   "message": "Love the new flow!",
   "metadata": {}
 }
-```
-
+````
 ## License
 
 MIT © Shtbox.io
