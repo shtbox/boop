@@ -1,6 +1,6 @@
 {
   "name": "@shtbox/boop",
-  "version": "0.4.2-0",
+  "version": "0.5.0",
   "description": "Simple Interactions - Embeddable feedback widget for React websites.",
   "keywords": [
     "react",
