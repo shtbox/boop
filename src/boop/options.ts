@@ -16,6 +16,7 @@ import type {
 } from "./types";
 
 export type ResolvedBoopOptions = {
+  projectId: string;  // required
   endpoint: string;
   darkMode: boolean;
   mode: BoopPanelVariant;
@@ -95,6 +96,7 @@ const defaultBackdropOptions: BoopBackdropOptions = {
 };
 
 export const defaultBoopOptions: ResolvedBoopOptions = {
+  projectId: "",
   endpoint: DEFAULT_ENDPOINT,
   darkMode: false,
   mode: "sidebar",
@@ -110,6 +112,21 @@ export const defaultBoopOptions: ResolvedBoopOptions = {
   metadata: undefined,
   slots: {},
   attribution: true
+};
+
+const resolveProjectId = (projectId?: string) => projectId?.trim() ?? "";
+
+const resolveEndpoint = (baseEndpoint: string, projectId: string) => {
+  if (baseEndpoint !== DEFAULT_ENDPOINT) {
+    return baseEndpoint;
+  }
+  if (!projectId) {
+    throw new Error(
+      "Boop requires a projectId when using the default endpoint. Set options.projectId or provider defaultOptions.projectId."
+    );
+  }
+  const normalized = baseEndpoint.endsWith("/") ? baseEndpoint.slice(0, -1) : baseEndpoint;
+  return `${normalized}/${projectId}`;
 };
 
 const mergeVariantOptions = (
@@ -180,27 +197,35 @@ export const combineBoopOptions = (
   attribution: base?.attribution ?? overrides?.attribution ?? true
 });
 
-export const mergeBoopOptions = (options?: BoopOptions): ResolvedBoopOptions => ({
-  endpoint: options?.endpoint ?? defaultBoopOptions.endpoint,
-  darkMode: options?.darkMode ?? defaultBoopOptions.darkMode,
-  mode: options?.mode ?? defaultBoopOptions.mode,
-  widgetOptions: mergeVariantOptions(
-    createDefaultVariantOptions(),
-    options?.widgetOptions
-  ),
-  sidebarOptions: mergeVariantOptions(
-    createDefaultVariantOptions(),
-    options?.sidebarOptions
-  ),
-  behavior: { ...defaultBehaviorOptions, ...(options?.behavior ?? {}) },
-  animation: mergeAnimationOptions(defaultAnimationOptions, options?.animation),
-  backdrop: { ...defaultBackdropOptions, ...(options?.backdrop ?? {}) },
-  callbacks: { ...(options?.callbacks ?? {}) },
-  style: mergeStyleOptions(defaultStyleOptions, options?.style),
-  urlResolver: options?.urlResolver,
-  includeStackTrace: options?.includeStackTrace ?? defaultBoopOptions.includeStackTrace,
-  onSuccessRenderer: options?.onSuccessRenderer,
-  metadata: options?.metadata,
-  slots: { ...(options?.slots ?? {}) },
-  attribution: options?.attribution ?? true
-});
+export const mergeBoopOptions = (options?: BoopOptions): ResolvedBoopOptions => {
+  const projectId = resolveProjectId(options?.projectId ?? defaultBoopOptions.projectId);
+
+  return {
+    projectId,
+    endpoint: resolveEndpoint(
+      options?.endpoint ?? defaultBoopOptions.endpoint,
+      projectId
+    ),
+    darkMode: options?.darkMode ?? defaultBoopOptions.darkMode,
+    mode: options?.mode ?? defaultBoopOptions.mode,
+    widgetOptions: mergeVariantOptions(
+      createDefaultVariantOptions(),
+      options?.widgetOptions
+    ),
+    sidebarOptions: mergeVariantOptions(
+      createDefaultVariantOptions(),
+      options?.sidebarOptions
+    ),
+    behavior: { ...defaultBehaviorOptions, ...(options?.behavior ?? {}) },
+    animation: mergeAnimationOptions(defaultAnimationOptions, options?.animation),
+    backdrop: { ...defaultBackdropOptions, ...(options?.backdrop ?? {}) },
+    callbacks: { ...(options?.callbacks ?? {}) },
+    style: mergeStyleOptions(defaultStyleOptions, options?.style),
+    urlResolver: options?.urlResolver,
+    includeStackTrace: options?.includeStackTrace ?? defaultBoopOptions.includeStackTrace,
+    onSuccessRenderer: options?.onSuccessRenderer,
+    metadata: options?.metadata,
+    slots: { ...(options?.slots ?? {}) },
+    attribution: options?.attribution ?? true
+  };
+};

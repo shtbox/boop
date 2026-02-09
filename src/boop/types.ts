@@ -162,6 +162,7 @@ export type BoopSuccessRenderer = (
 ) => React.ReactNode;
 
 export type BoopOptions = Partial<{
+  projectId: string;
   endpoint: string;
   darkMode: boolean;
   mode: BoopPanelVariant;

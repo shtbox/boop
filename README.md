@@ -9,10 +9,10 @@ npm install @shtbox/boop
 
 ## Quick start
 
-Boop is intentionally small. Drop in <Boop /> and you are done.
+Boop is intentionally small. Drop in `<Boop />` with your `projectId` and you are done.
 ````Typescript
 import { Boop } from "@shtbox/boop";
-export const App = () => <Boop />;
+export const App = () => <Boop options={{ projectId: "your-project-id" }} />;
 ````
 
 ## Why Boop
@@ -63,7 +63,9 @@ const Page = () => {
 };
 
 export const App = () => (
-  <BoopProvider defaultOptions={{ style: { useDefaultStyles: true } }}>
+  <BoopProvider
+    defaultOptions={{ projectId: "your-project-id", style: { useDefaultStyles: true } }}
+  >
     <Page />
     <Boop options={{ mode: "widget" }} />
   </BoopProvider>
@@ -108,7 +110,8 @@ All options are passed under a single prop: `options?: BoopOptions`.
 
 ```ts
 {
-  endpoint?: string,                // Default: https://boop.shtbox.io/api/feedback
+  projectId: string,                // Required
+  endpoint?: string,                // Default: https://boop.shtbox.io/api/feedback/{projectId}
   darkMode?: boolean,               // Default: false
   mode?: "sidebar" | "widget",      // Default: "sidebar"
   widgetOptions?: BoopVariantOptions,
@@ -126,6 +129,14 @@ All options are passed under a single prop: `options?: BoopOptions`.
   attribution?: boolean             // Default: true
 }
 ```
+
+`projectId` is required only when you use the default endpoint. If you do not
+pass `endpoint`, Boop builds the URL by appending the projectId to the default
+endpoint. If you provide a custom endpoint, `projectId` is optional and you are
+responsible for including it if your endpoint expects it.
+
+All examples below assume `projectId` is already set, either directly on the
+component or via `BoopProvider` defaults.
 
 #### `BoopVariantOptions`
 

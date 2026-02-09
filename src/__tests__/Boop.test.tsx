@@ -10,15 +10,25 @@ beforeEach(() => {
 });
 
 describe("Boop", () => {
+  it("throws when projectId is missing and default endpoint is used", () => {
+    expect(() => render(<Boop />)).toThrow(/projectId/i);
+  });
+
+  it("does not require projectId when endpoint is overridden", () => {
+    expect(() =>
+      render(<Boop options={{ endpoint: "https://example.com/feedback" }} />)
+    ).not.toThrow();
+  });
+
   it("opens the feedback panel when the button is clicked", () => {
-    render(<Boop />);
+    render(<Boop options={{ projectId: "project-123" }} />);
 
     fireEvent.click(screen.getByRole("button", { name: /feedback/i }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("validates the message before submit", () => {
-    render(<Boop />);
+    render(<Boop options={{ projectId: "project-123" }} />);
 
     fireEvent.click(screen.getByRole("button", { name: /feedback/i }));
     fireEvent.click(screen.getByRole("button", { name: /send feedback/i }));
@@ -29,7 +39,14 @@ describe("Boop", () => {
   it("submits the feedback payload to the endpoint", async () => {
     mockFetch.mockResolvedValue({ ok: true });
 
-    render(<Boop options={{ endpoint: "https://example.com/feedback" }} />);
+    render(
+      <Boop
+        options={{
+          projectId: "project-123",
+          endpoint: "https://example.com/feedback"
+        }}
+      />
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /feedback/i }));
     fireEvent.change(screen.getByPlaceholderText(/what would you like to share/i), {

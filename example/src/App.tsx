@@ -137,7 +137,7 @@ const App = () => {
           </div>
           <Boop
             options={{
-              endpoint: "https://boop.shtbox.io",
+              projectId: "1234567890",
               darkMode,
               mode: panelVariant,
               behavior: { closeOnSubmit },
@@ -179,7 +179,7 @@ const App = () => {
             <p>Button placed inline in the page flow</p>
             <Boop
               options={{
-                endpoint: "https://boop.shtbox.io",
+                projectId: "1234567890",
                 darkMode,
                 sidebarOptions: {
                   button: {
@@ -196,7 +196,7 @@ const App = () => {
             <p>Button fixed to bottom-right corner</p>
             <Boop
               options={{
-                endpoint: "https://boop.shtbox.io",
+                projectId: "1234567890",
                 darkMode,
                 sidebarOptions: {
                   button: {
@@ -213,7 +213,7 @@ const App = () => {
             <p>With custom class names</p>
             <Boop
               options={{
-                endpoint: "https://boop.shtbox.io",
+                projectId: "1234567890",
                 darkMode,
                 style: {
                   classNames: {
@@ -235,7 +235,7 @@ const App = () => {
             <p>Fixed widget panel layout</p>
             <Boop
               options={{
-                endpoint: "https://webhook.site/609d33d3-447f-4bc2-b8b9-647b74e5d970",
+                projectId: "1234567890",
                 darkMode,
                 mode: "widget",
                 includeStackTrace: true,
@@ -262,7 +262,7 @@ const App = () => {
       {/* Fixed button example - rendered outside container */}
       <Boop
         options={{
-          endpoint: "https://boop.shtbox.io",
+          projectId: "1234567890",
           darkMode,
           sidebarOptions: {
             button: {
