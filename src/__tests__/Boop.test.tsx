@@ -27,13 +27,18 @@ describe("Boop", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("validates the message before submit", () => {
+  it("validates the message before submit", async () => {
     render(<Boop options={{ projectId: "project-123" }} />);
 
     fireEvent.click(screen.getByRole("button", { name: /feedback/i }));
+    fireEvent.change(screen.getByPlaceholderText(/what would you like to share/i), {
+      target: { value: "   " }
+    });
     fireEvent.click(screen.getByRole("button", { name: /send feedback/i }));
 
-    expect(screen.getByText(/please add a feedback message/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/please add a feedback message/i)
+    ).toBeInTheDocument();
   });
 
   it("submits the feedback payload to the endpoint", async () => {
