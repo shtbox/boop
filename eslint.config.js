@@ -7,7 +7,12 @@ import tseslint from "typescript-eslint";
 
 export default [
   {
-    ignores: ["dist/**"]
+    ignores: [
+      "dist/**",
+      "coverage/**",
+      "examples/**/.next/**",
+      "examples/**/dist/**"
+    ]
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -57,6 +62,15 @@ export default [
         ...globals.node
       },
       sourceType: "script"
+    }
+  },
+  {
+    files: ["**/*.mjs"],
+    languageOptions: {
+      globals: {
+        ...globals.node
+      },
+      sourceType: "module"
     }
   }
 ];

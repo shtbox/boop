@@ -32,6 +32,65 @@ export const App = () => <Boop options={{ projectId: "your-project-id" }} />;
 ## Live Demo
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/edit/shtbox-boop-widget?file=src%2FApp.tsx)
 
+## Compatibility
+
+### Matrix
+
+| Target | Status | Verified by |
+| --- | --- | --- |
+| Vite (client-only) | Supported | `npm run smoke:vite` |
+| Next.js App Router (SSR + RSC) | Supported | `npm run smoke:next` (`next build`) |
+| React 18 | Supported | `npm run smoke:react18` |
+| React 19 | Supported | `npm run smoke:react19` |
+
+### Commands
+
+From the repo root:
+
+```bash
+npm run smoke:vite
+npm run smoke:next
+npm run smoke:react18
+npm run smoke:react19
+```
+
+These commands build and pack the local library, install the tarball into each smoke app, and run production builds:
+
+- Vite smoke runs `vite build` in `examples/vite-react`.
+- Next smoke runs `next build` in `examples/next-app`.
+- React 18/19 smoke runs both Vite and Next builds with explicit React major versions.
+
+### Next.js App Router usage
+
+Use one local client boundary in your app, then render `Boop` there:
+
+```tsx
+// app/BoopClient.tsx
+"use client";
+import { Boop } from "@shtbox/boop";
+
+export function BoopClient() {
+  return <Boop options={{ endpoint: "https://example.com/feedback" }} />;
+}
+```
+
+```tsx
+// app/page.tsx (Server Component)
+import { BoopClient } from "./BoopClient";
+
+export default function Page() {
+  return <BoopClient />;
+}
+```
+
+### SSR-safe patterns used
+
+- Browser globals (`window`, `document`) are only touched at runtime inside effects, event handlers, or guarded functions.
+- No top-level browser API access is required to import the package in Node/SSR environments.
+- No `useLayoutEffect` is used.
+- The published root export points to a dedicated client wrapper entry (`dist/client.js`) with a top-level `"use client"` directive.
+- A server-safe subpath (`@shtbox/boop/server`) exports URL helpers and types without requiring component imports.
+
 ## Why Boop
 
 - Ship a feedback widget in minutes, not days
