@@ -1,6 +1,5 @@
 import React, {
   forwardRef,
-  JSX,
   useCallback,
   useContext,
   useEffect,
@@ -20,9 +19,9 @@ import { createStyles, getDefaultTheme } from "./boop/styles";
 import type {
   BoopFieldName,
   BoopFieldValues,
+  BoopFieldValuesMode,
   BoopHandle,
   BoopProps,
-  BoopRef,
   BoopSubmitPayload
 } from "./boop/types";
 import { mergeClassNames } from "./boop/utils";
@@ -33,9 +32,11 @@ type SubmitStatus = {
   message?: string;
 };
 
-type BoopComponent = (props: BoopProps & { ref?: BoopRef }) => JSX.Element;
+type BoopPropsWithRef = BoopProps & { ref?: React.Ref<BoopHandle> };
 
-export const Boop = forwardRef<BoopHandle, BoopProps>(({ options }, ref) => {
+export const Boop = forwardRef<BoopHandle, BoopProps>((props, ref) => {
+  const { options } = props;
+  const resolvedRef = ref ?? (props as BoopPropsWithRef).ref;
   const boopContext = useContext(BoopContext);
   const combinedOptions = useMemo(
     () => combineBoopOptions(boopContext?.options, options),
@@ -140,37 +141,46 @@ export const Boop = forwardRef<BoopHandle, BoopProps>(({ options }, ref) => {
   const setFieldValue = useCallback(
     (field: BoopFieldName, value: string) => {
       if (field === "name") {
+        if (value === name) {
+          return;
+        }
         setName(value);
       } else if (field === "email") {
+        if (value === email) {
+          return;
+        }
         setEmail(value);
       } else {
+        if (value === message) {
+          return;
+        }
         setMessage(value);
       }
       onFieldChange?.(field, value);
     },
-    [onFieldChange]
+    [email, message, name, onFieldChange]
   );
 
   const setFieldValues = useCallback(
-    (values?: BoopFieldValues) => {
+    (values?: BoopFieldValues, mode: BoopFieldValuesMode = "controlled") => {
       if (!values) {
         return;
       }
-      if (values.name !== undefined) {
+      if (values.name !== undefined && (mode === "controlled" || !name)) {
         setFieldValue("name", values.name);
       }
-      if (values.email !== undefined) {
+      if (values.email !== undefined && (mode === "controlled" || !email)) {
         setFieldValue("email", values.email);
       }
-      if (values.message !== undefined) {
+      if (values.message !== undefined && (mode === "controlled" || !message)) {
         setFieldValue("message", values.message);
       }
     },
-    [setFieldValue]
+    [email, message, name, setFieldValue]
   );
 
   useImperativeHandle(
-    ref,
+    resolvedRef,
     () => ({
       setFieldValue,
       setFieldValues
@@ -205,8 +215,8 @@ export const Boop = forwardRef<BoopHandle, BoopProps>(({ options }, ref) => {
   }, [autoOpen, open]);
 
   useEffect(() => {
-    setFieldValues(resolvedOptions.fieldValues);
-  }, [resolvedOptions.fieldValues, setFieldValues]);
+    setFieldValues(resolvedOptions.fieldValues, resolvedOptions.fieldValuesMode);
+  }, [resolvedOptions.fieldValues, resolvedOptions.fieldValuesMode, setFieldValues]);
 
   useEffect(() => {
     if (!animationState.shouldAnimate) {
@@ -558,4 +568,4 @@ export const Boop = forwardRef<BoopHandle, BoopProps>(({ options }, ref) => {
       ) : null}
     </div>
   );
-}) as BoopComponent;
+});

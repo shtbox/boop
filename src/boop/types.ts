@@ -25,6 +25,8 @@ export type BoopFieldName = "name" | "email" | "message";
 
 export type BoopFieldValues = Partial<Record<BoopFieldName, string>>;
 
+export type BoopFieldValuesMode = "initial" | "controlled";
+
 export type BoopFixedOffset = Partial<{
   top: number;
   right: number;
@@ -182,6 +184,7 @@ export type BoopOptions = Partial<{
   slots: BoopSlots;
   attribution: boolean;
   fieldValues: BoopFieldValues;
+  fieldValuesMode: BoopFieldValuesMode;
 }>;
 
 export interface BoopProps {
@@ -193,7 +196,3 @@ export type BoopHandle = {
   setFieldValues: (values: BoopFieldValues) => void;
 };
 
-export type BoopRef =
-  | ((instance: BoopHandle | null) => void)
-  | { current: BoopHandle | null }
-  | null;

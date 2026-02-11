@@ -34,7 +34,7 @@ Component-level options always override provider defaults.
 import { Boop, BoopProvider, useBoop } from "@shtbox/boop";
 
 const Page = () => {
-  const { updateOptions, submitFeedback } = useBoop();
+  const { updateOptions, submitFeedback, setFieldValue } = useBoop();
 
   return (
     <>
@@ -57,6 +57,10 @@ const Page = () => {
         }
       >
         Send feedback
+      </button>
+
+      <button onClick={() => setFieldValue("message", "Love this page!")}>
+        Prefill message
       </button>
     </>
   );
@@ -126,7 +130,9 @@ All options are passed under a single prop: `options?: BoopOptions`.
   onSuccessRenderer?: (payload, helpers) => ReactNode,
   metadata?: Record<string, unknown>,
   slots?: BoopSlots,
-  attribution?: boolean             // Default: true
+  attribution?: boolean,            // Default: true
+  fieldValues?: { name?: string, email?: string, message?: string },
+  fieldValuesMode?: "initial" | "controlled" // Default: "initial"
 }
 ```
 
@@ -470,6 +476,39 @@ await submitFeedback(
   }
 );
 ```
+
+### Programmatic field values
+
+Set fields programmatically via options, provider actions, or a ref.
+
+```tsx
+<Boop
+  options={{
+    fieldValues: { email: "ada@example.com" },
+    fieldValuesMode: "initial"
+  }}
+/>
+```
+
+```tsx
+const { setFieldValue, setFieldValues } = useBoop();
+
+setFieldValue("name", "Ada");
+setFieldValues({ email: "ada@example.com", message: "Hello!" });
+```
+
+```tsx
+import { Boop, type BoopHandle } from "@shtbox/boop";
+
+const ref = useRef<BoopHandle | null>(null);
+
+<Boop ref={ref} options={{ projectId: "your-project-id" }} />;
+
+ref.current?.setFieldValue("message", "Hello!");
+```
+
+`fieldValuesMode` defaults to `"initial"` which only fills empty fields, keeping
+user edits intact. Use `"controlled"` to always drive the form values.
 
 ### Payload
 

@@ -9,7 +9,7 @@ export type {
   BoopPlaceholders,
   BoopFieldName,
   BoopFieldValues,
-  BoopRef,
+  BoopFieldValuesMode,
   BoopFixedOffset,
   BoopButtonOptions,
   BoopPanelOptions,
