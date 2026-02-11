@@ -20,6 +20,8 @@ export const App = () => <Boop options={{ projectId: "your-project-id" }} />;
 >
 > Alternatively, you can host your own endpoint and run Boop in standalone mode without a shtbox.io account.
 
+## Live Demo
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/edit/shtbox-boop-widget?file=src%2FApp.tsx)
 
 ## Why Boop
 

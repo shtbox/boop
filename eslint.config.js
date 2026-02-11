@@ -6,6 +6,9 @@ import jsxA11y from "eslint-plugin-jsx-a11y";
 import tseslint from "typescript-eslint";
 
 export default [
+  {
+    ignores: ["dist/**"]
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
