@@ -15,6 +15,12 @@ import { Boop } from "@shtbox/boop";
 export const App = () => <Boop options={{ projectId: "your-project-id" }} />;
 ````
 
+> [!TIP]
+> To obtain a `projectId`, sign up for a free account at [https://shtbox.io](https://shtbox.io) and create a project.
+>
+> Alternatively, you can host your own endpoint and run Boop in standalone mode without a shtbox.io account.
+
+
 ## Why Boop
 
 - Ship a feedback widget in minutes, not days
@@ -523,6 +529,20 @@ The widget submits the following JSON payload:
   "metadata": {}
 }
 ````
+
+## Release process
+
+- Releases are automated by semantic-release on pushes to `main`.
+- Prereleases publish from `prerelease/<channel>` branches using the `<channel>`
+  npm dist-tag (ex: `prerelease/beta` -> `beta`).
+- PRs to `main` run a dry-run to preview the next version and release notes.
+- Local preview: `npm run release:dry-run`.
+- Releases publish to npmjs (trusted publishing) and GitHub Packages.
+
+For npmjs publishing, configure a Trusted Publisher for this repo/workflow
+(`release.yml`) on npmjs.com. GitHub Packages uses the default `GITHUB_TOKEN`
+with `packages: write` permissions.
+
 ## License
 
 MIT © Shtbox.io
