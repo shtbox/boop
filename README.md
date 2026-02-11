@@ -1,7 +1,16 @@
-
 # @shtbox/boop
 
-Embeddable feedback widget for React websites. Built for Shtbox.io (ShotBox).
+Embeddable feedback widget for React websites. Built by Shtbox.io
+<p align="center">
+
+[![npm version](https://img.shields.io/npm/v/@shtbox/boop)](https://www.npmjs.com/package/@shtbox/boop)
+[![downloads](https://img.shields.io/npm/dt/@shtbox/boop)](https://www.npmjs.com/package/@shtbox/boop)
+![types](https://img.shields.io/npm/types/@shtbox/boop)
+[![build](https://img.shields.io/github/actions/workflow/status/shtbox/boop/release.yml)](https://github.com/shtbox/boop/actions)
+[![issues](https://img.shields.io/github/issues/shtbox/boop)](https://github.com/shtbox/boop/issues)
+![frameworks](https://img.shields.io/badge/frameworks-React%20%7C%20Vite%20%7C%20Next.js-blue)
+
+</p>
 
 ## Install
 

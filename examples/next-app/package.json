@@ -1,0 +1,15 @@
+{
+  "name": "boop-next-smoke",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build"
+  },
+  "dependencies": {
+    "@shtbox/boop": "file:../../shtbox-boop-0.8.0.tgz",
+    "next": "^15.0.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}
