@@ -9,7 +9,7 @@ import React, {
 import { combineBoopOptions, mergeBoopOptions } from "../boop/options";
 import { ensureConsoleCapture } from "../boop/stack";
 import { submitBoopFeedback } from "../boop/submit";
-import type { BoopOptions, BoopSubmitPayload } from "../boop/types";
+import type { BoopFieldName, BoopFieldValues, BoopOptions, BoopSubmitPayload } from "../boop/types";
 
 export type BoopContextValue = {
   options: BoopOptions;
@@ -17,6 +17,8 @@ export type BoopContextValue = {
   updateOptions: (updates: BoopOptions) => void;
   resetOptions: () => void;
   submitFeedback: (payload: BoopSubmitPayload, overrides?: BoopOptions) => Promise<Response>;
+  setFieldValue: (field: BoopFieldName, value: string) => void;
+  setFieldValues: (values: BoopFieldValues) => void;
 };
 
 export const BoopContext = createContext<BoopContextValue | undefined>(undefined);
@@ -53,6 +55,23 @@ export const BoopProvider = ({ children, defaultOptions }: BoopProviderProps) =>
     [options]
   );
 
+  const setFieldValue = useCallback(
+    (field: BoopFieldName, value: string) => {
+      setOptions((current) => ({
+        ...current,
+        fieldValues: { ...(current.fieldValues ?? {}), [field]: value }
+      }));
+    },
+    []
+  );
+
+  const setFieldValues = useCallback((values: BoopFieldValues) => {
+    setOptions((current) => ({
+      ...current,
+      fieldValues: { ...(current.fieldValues ?? {}), ...values }
+    }));
+  }, []);
+
   useEffect(() => {
     if (options.includeStackTrace) {
       ensureConsoleCapture();
@@ -65,9 +84,11 @@ export const BoopProvider = ({ children, defaultOptions }: BoopProviderProps) =>
       setOptions,
       updateOptions,
       resetOptions,
-      submitFeedback
+      submitFeedback,
+      setFieldValue,
+      setFieldValues
     }),
-    [options, setOptions, resetOptions, submitFeedback, updateOptions]
+    [options, setOptions, resetOptions, submitFeedback, updateOptions, setFieldValue, setFieldValues]
   );
 
   return <BoopContext.Provider value={value}>{children}</BoopContext.Provider>;

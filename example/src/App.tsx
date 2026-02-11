@@ -235,7 +235,11 @@ const App = () => {
             <p>Fixed widget panel layout</p>
             <Boop
               options={{
-                projectId: "1234567890",
+                fieldValues: {
+                  email: "test@test.com",
+                  name: "Test User"
+                },
+                projectId: "aj28lhy7sk",
                 darkMode,
                 mode: "widget",
                 includeStackTrace: true,

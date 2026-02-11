@@ -23,6 +23,8 @@ export type BoopPanelVariant = "sidebar" | "widget";
 
 export type BoopFieldName = "name" | "email" | "message";
 
+export type BoopFieldValues = Partial<Record<BoopFieldName, string>>;
+
 export type BoopFixedOffset = Partial<{
   top: number;
   right: number;
@@ -179,8 +181,19 @@ export type BoopOptions = Partial<{
   metadata: Record<string, unknown>;
   slots: BoopSlots;
   attribution: boolean;
+  fieldValues: BoopFieldValues;
 }>;
 
 export interface BoopProps {
   options?: BoopOptions;
 }
+
+export type BoopHandle = {
+  setFieldValue: (field: BoopFieldName, value: string) => void;
+  setFieldValues: (values: BoopFieldValues) => void;
+};
+
+export type BoopRef =
+  | ((instance: BoopHandle | null) => void)
+  | { current: BoopHandle | null }
+  | null;

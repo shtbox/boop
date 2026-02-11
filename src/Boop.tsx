@@ -1,8 +1,11 @@
 import React, {
+  forwardRef,
+  JSX,
   useCallback,
   useContext,
   useEffect,
   useId,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState
@@ -14,7 +17,14 @@ import { resolvePanelFixedOffset, resolvePanelPlacement } from "./boop/positioni
 import { ensureConsoleCapture } from "./boop/stack";
 import { submitBoopFeedback } from "./boop/submit";
 import { createStyles, getDefaultTheme } from "./boop/styles";
-import type { BoopProps, BoopSubmitPayload } from "./boop/types";
+import type {
+  BoopFieldName,
+  BoopFieldValues,
+  BoopHandle,
+  BoopProps,
+  BoopRef,
+  BoopSubmitPayload
+} from "./boop/types";
 import { mergeClassNames } from "./boop/utils";
 import { BoopContext } from "./provider/boop-provider";
 
@@ -23,7 +33,9 @@ type SubmitStatus = {
   message?: string;
 };
 
-export const Boop = ({ options }: BoopProps) => {
+type BoopComponent = (props: BoopProps & { ref?: BoopRef }) => JSX.Element;
+
+export const Boop = forwardRef<BoopHandle, BoopProps>(({ options }, ref) => {
   const boopContext = useContext(BoopContext);
   const combinedOptions = useMemo(
     () => combineBoopOptions(boopContext?.options, options),
@@ -125,6 +137,47 @@ export const Boop = ({ options }: BoopProps) => {
     openVisibility();
   }, [openVisibility]);
 
+  const setFieldValue = useCallback(
+    (field: BoopFieldName, value: string) => {
+      if (field === "name") {
+        setName(value);
+      } else if (field === "email") {
+        setEmail(value);
+      } else {
+        setMessage(value);
+      }
+      onFieldChange?.(field, value);
+    },
+    [onFieldChange]
+  );
+
+  const setFieldValues = useCallback(
+    (values?: BoopFieldValues) => {
+      if (!values) {
+        return;
+      }
+      if (values.name !== undefined) {
+        setFieldValue("name", values.name);
+      }
+      if (values.email !== undefined) {
+        setFieldValue("email", values.email);
+      }
+      if (values.message !== undefined) {
+        setFieldValue("message", values.message);
+      }
+    },
+    [setFieldValue]
+  );
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      setFieldValue,
+      setFieldValues
+    }),
+    [setFieldValue, setFieldValues]
+  );
+
   const successTransitionMs = Math.max(animationState.durationMs, 500);
   const lockContentHeight = useCallback(
     (element: HTMLElement | null) => {
@@ -150,6 +203,10 @@ export const Boop = ({ options }: BoopProps) => {
       open();
     }
   }, [autoOpen, open]);
+
+  useEffect(() => {
+    setFieldValues(resolvedOptions.fieldValues);
+  }, [resolvedOptions.fieldValues, setFieldValues]);
 
   useEffect(() => {
     if (!animationState.shouldAnimate) {
@@ -409,8 +466,7 @@ export const Boop = ({ options }: BoopProps) => {
                     name="name"
                       value={name}
                       onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                        setName(event.target.value);
-                        onFieldChange?.("name", event.target.value);
+                        setFieldValue("name", event.target.value);
                       }}
                       placeholder={placeholderText.name}
                       style={getStyle("input")}
@@ -429,8 +485,7 @@ export const Boop = ({ options }: BoopProps) => {
                     name="email"
                       value={email}
                       onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                        setEmail(event.target.value);
-                        onFieldChange?.("email", event.target.value);
+                        setFieldValue("email", event.target.value);
                       }}
                       placeholder={placeholderText.email}
                       style={getStyle("input")}
@@ -448,8 +503,7 @@ export const Boop = ({ options }: BoopProps) => {
                     name="message"
                       value={message}
                       onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
-                        setMessage(event.target.value);
-                        onFieldChange?.("message", event.target.value);
+                        setFieldValue("message", event.target.value);
                       }}
                       placeholder={placeholderText.message}
                       style={{ ...getStyle("input"), ...getStyle("textarea") }}
@@ -504,4 +558,4 @@ export const Boop = ({ options }: BoopProps) => {
       ) : null}
     </div>
   );
-};
+}) as BoopComponent;

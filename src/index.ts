@@ -8,6 +8,8 @@ export type {
   BoopLabels,
   BoopPlaceholders,
   BoopFieldName,
+  BoopFieldValues,
+  BoopRef,
   BoopFixedOffset,
   BoopButtonOptions,
   BoopPanelOptions,
@@ -25,7 +27,8 @@ export type {
   BoopSuccessRenderer,
   BoopSuccessRendererHelpers,
   BoopSlots,
-  BoopOptions
+  BoopOptions,
+  BoopHandle
 } from "./boop/types";
 
 export { BoopProvider, useBoop } from "./provider/boop-provider";

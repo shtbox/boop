@@ -5,6 +5,7 @@ import type {
   BoopBackdropOptions,
   BoopCallbacks,
   BoopLabels,
+  BoopFieldValues,
   BoopOptions,
   BoopPlaceholders,
   BoopStyleOptions,
@@ -33,6 +34,7 @@ export type ResolvedBoopOptions = {
   metadata?: Record<string, unknown>;
   slots: BoopSlots;
   attribution: boolean;
+  fieldValues?: BoopFieldValues;
 };
 
 const defaultLabels: BoopLabels = {
@@ -111,7 +113,8 @@ export const defaultBoopOptions: ResolvedBoopOptions = {
   onSuccessRenderer: undefined,
   metadata: undefined,
   slots: {},
-  attribution: true
+  attribution: true,
+  fieldValues: undefined
 };
 
 const resolveProjectId = (projectId?: string) => projectId?.trim() ?? "";
@@ -194,7 +197,8 @@ export const combineBoopOptions = (
   onSuccessRenderer: overrides?.onSuccessRenderer ?? base?.onSuccessRenderer,
   metadata: mergeMetadata(base?.metadata, overrides?.metadata),
   slots: { ...(base?.slots ?? {}), ...(overrides?.slots ?? {}) },
-  attribution: base?.attribution ?? overrides?.attribution ?? true
+  attribution: base?.attribution ?? overrides?.attribution ?? true,
+  fieldValues: { ...(base?.fieldValues ?? {}), ...(overrides?.fieldValues ?? {}) }
 });
 
 export const mergeBoopOptions = (options?: BoopOptions): ResolvedBoopOptions => {
@@ -226,6 +230,7 @@ export const mergeBoopOptions = (options?: BoopOptions): ResolvedBoopOptions => 
     onSuccessRenderer: options?.onSuccessRenderer,
     metadata: options?.metadata,
     slots: { ...(options?.slots ?? {}) },
-    attribution: options?.attribution ?? true
+    attribution: options?.attribution ?? true,
+    fieldValues: options?.fieldValues
   };
 };
