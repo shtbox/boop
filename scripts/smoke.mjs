@@ -35,11 +35,14 @@ const runCapture = (command, cwd = rootDir) => {
 };
 
 const parsePackFileName = (rawOutput) => {
-  const start = rawOutput.indexOf("[");
-  if (start === -1) {
+  const withoutAnsi = rawOutput.replace(/\u001b\[[0-9;]*m/g, "");
+  const match = withoutAnsi.match(/(\[\s*\{[\s\S]*\}\s*\])\s*$/);
+
+  if (!match) {
     throw new Error("Unable to parse npm pack output.");
   }
-  const parsed = JSON.parse(rawOutput.slice(start));
+
+  const parsed = JSON.parse(match[1]);
   const filename = parsed?.[0]?.filename;
   if (!filename) {
     throw new Error("npm pack did not return a filename.");
@@ -48,7 +51,7 @@ const parsePackFileName = (rawOutput) => {
 };
 
 run("npm run build");
-const packOutput = runCapture("npm pack --json");
+const packOutput = runCapture("npm pack --json --ignore-scripts");
 const tarballFileName = parsePackFileName(packOutput);
 const tarballPath = resolve(rootDir, tarballFileName);
 
