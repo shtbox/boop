@@ -34,8 +34,13 @@ const runCapture = (command, cwd = rootDir) => {
   return execSync(command, { cwd, encoding: "utf8" });
 };
 
+const stripAnsi = (value) => {
+  const esc = String.fromCharCode(27);
+  return value.split(esc).join("");
+};
+
 const parsePackFileName = (rawOutput) => {
-  const withoutAnsi = rawOutput.replace(/\u001b\[[0-9;]*m/g, "");
+  const withoutAnsi = stripAnsi(rawOutput);
   const match = withoutAnsi.match(/(\[\s*\{[\s\S]*\}\s*\])\s*$/);
 
   if (!match) {
