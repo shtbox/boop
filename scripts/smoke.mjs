@@ -64,16 +64,16 @@ try {
   for (const exampleName of targets) {
     const exampleDir = resolve(rootDir, "examples", exampleName);
 
-    run("npm install --no-audit --no-fund", exampleDir);
+    run("npm ci --no-audit --no-fund", exampleDir);
 
     if (reactVersion) {
       run(
-        `npm install --no-audit --no-fund react@${reactVersion} react-dom@${reactVersion}`,
+        `npm install --no-audit --no-fund --no-save react@${reactVersion} react-dom@${reactVersion}`,
         exampleDir
       );
     }
 
-    run(`npm install --no-audit --no-fund "${tarballPath}"`, exampleDir);
+    run(`npm install --no-audit --no-fund --no-save "${tarballPath}"`, exampleDir);
     run("npm run build", exampleDir);
   }
 } finally {
