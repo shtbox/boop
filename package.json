@@ -1,6 +1,6 @@
 {
   "name": "@shtbox/boop",
-  "version": "1.0.0",
+  "version": "1.0.1-patch.1",
   "description": "Feedback, without the friction - Embeddable feedback widget for React websites.",
   "keywords": [
     "react",
@@ -106,5 +106,8 @@
   "bugs": {
     "url": "https://github.com/shtbox/boop/issues"
   },
-  "homepage": "https://github.com/shtbox/boop#readme"
+  "homepage": "https://github.com/shtbox/boop#readme",
+  "dependencies": {
+    "conventional-changelog-conventionalcommits": "^9.1.0"
+  }
 }
