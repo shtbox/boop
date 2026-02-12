@@ -64,7 +64,7 @@ try {
   for (const exampleName of targets) {
     const exampleDir = resolve(rootDir, "examples", exampleName);
 
-    run("npm ci --no-audit --no-fund", exampleDir);
+    run("npm install --no-audit --no-fund", exampleDir);
 
     if (reactVersion) {
       run(
