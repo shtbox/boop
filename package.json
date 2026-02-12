@@ -106,5 +106,8 @@
   "bugs": {
     "url": "https://github.com/shtbox/boop/issues"
   },
-  "homepage": "https://github.com/shtbox/boop#readme"
+  "homepage": "https://github.com/shtbox/boop#readme",
+  "dependencies": {
+    "conventional-changelog-conventionalcommits": "^9.1.0"
+  }
 }

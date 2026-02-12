@@ -6,7 +6,7 @@ const distDir = resolve("dist");
 await Promise.all([
   writeFile(
     resolve(distDir, "client.js"),
-    `"use client";\n\nexport * from "./index.js";\n`,
+    `"use client";\n\nexport { Boop, BoopProvider, defaultUrlResolver, resolveUrlFromLocation, useBoop } from "./index.js";\n`,
     "utf8"
   ),
   writeFile(
