@@ -38,6 +38,7 @@ jobs:
   release:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    environment: Production
     permissions:
       contents: write
       issues: write
@@ -56,7 +57,6 @@ jobs:
       - name: Semantic release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
           GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
