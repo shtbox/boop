@@ -1,35 +1,51 @@
-import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { DEFAULT_BUTTON_FIXED_OFFSET, DEFAULT_WIDGET_GAP } from "./boop/constants";
-import { mergeBoopOptions } from "./boop/options";
+import React, {
+  forwardRef,
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState
+} from "react";
+import { buildBoopMotionStyles, resolveAnimationState } from "./boop/animation";
+import { useBoopVisibility } from "./boop/hooks/useBoopVisibility";
+import { combineBoopOptions, mergeBoopOptions } from "./boop/options";
+import { resolvePanelFixedOffset, resolvePanelPlacement } from "./boop/positioning";
+import { ensureConsoleCapture } from "./boop/stack";
+import { submitBoopFeedback } from "./boop/submit";
 import { createStyles, getDefaultTheme } from "./boop/styles";
-import type { BoopFixedOffset, BoopProps } from "./boop/types";
-import { isValidEmail, mergeClassNames } from "./boop/utils";
+import type {
+  BoopFieldName,
+  BoopFieldValues,
+  BoopFieldValuesMode,
+  BoopHandle,
+  BoopProps,
+  BoopSubmitPayload
+} from "./boop/types";
+import { mergeClassNames } from "./boop/utils";
+import { BoopContext } from "./provider/boop-provider";
 
 type SubmitStatus = {
   type: "idle" | "success" | "error";
   message?: string;
 };
 
-const addOffsetGap = (offset: BoopFixedOffset, gap: number): BoopFixedOffset => ({
-  ...(offset.top !== undefined ? { top: offset.top + gap } : {}),
-  ...(offset.right !== undefined ? { right: offset.right + gap } : {}),
-  ...(offset.bottom !== undefined ? { bottom: offset.bottom + gap } : {}),
-  ...(offset.left !== undefined ? { left: offset.left + gap } : {})
-});
+type BoopPropsWithRef = BoopProps & { ref?: React.Ref<BoopHandle> };
 
-const resolveBaseButtonOffset = (offset?: BoopFixedOffset): BoopFixedOffset => ({
-  ...DEFAULT_BUTTON_FIXED_OFFSET,
-  ...(offset ?? {})
-});
-
-const resolvePanelFixedOffset = (
-  panelOffset: BoopFixedOffset | undefined,
-  buttonOffset: BoopFixedOffset | undefined
-): BoopFixedOffset =>
-  panelOffset ?? addOffsetGap(resolveBaseButtonOffset(buttonOffset), DEFAULT_WIDGET_GAP);
-
-export const Boop = ({ options }: BoopProps) => {
-  const resolvedOptions = useMemo(() => mergeBoopOptions(options), [options]);
+export const Boop = forwardRef<BoopHandle, BoopProps>((props, ref) => {
+  const { options } = props;
+  const resolvedRef = ref ?? (props as BoopPropsWithRef).ref;
+  const boopContext = useContext(BoopContext);
+  const combinedOptions = useMemo(
+    () => combineBoopOptions(boopContext?.options, options),
+    [boopContext?.options, options]
+  );
+  const resolvedOptions = useMemo(
+    () => mergeBoopOptions(combinedOptions),
+    [combinedOptions]
+  );
   const {
     endpoint,
     darkMode,
@@ -37,46 +53,44 @@ export const Boop = ({ options }: BoopProps) => {
     widgetOptions,
     sidebarOptions,
     behavior,
+    animation,
+    backdrop,
     callbacks,
     style,
+    urlResolver,
+    includeStackTrace,
+    onSuccessRenderer,
     metadata,
     slots
   } = resolvedOptions;
-  const variantOptions = mode === "widget" ? widgetOptions : sidebarOptions;
   const { classNames, styleOverrides, theme, useDefaultStyles } = style;
   const { autoOpen, closeOnSubmit } = behavior;
-  const {
-    onOpen,
-    onClose,
-    onSubmitStart,
-    onValidationError,
-    onFieldChange,
-    onSubmitSuccess,
-    onSubmitError
-  } = callbacks;
+  const { onOpen, onClose, onFieldChange } = callbacks;
   const { title, labels, placeholders, button, panel, successMessage, errorMessage } =
-    variantOptions;
-  const rawVariantOptions = mode === "widget" ? options?.widgetOptions : options?.sidebarOptions;
-  const rawPanelPlacement = rawVariantOptions?.panel?.placement;
-  const rawPanelFixedOffset = rawVariantOptions?.panel?.fixedOffset;
-  const buttonLabel = button?.label ?? "Feedback";
+    mode === "widget" ? widgetOptions : sidebarOptions;
+  const rawPanelOptions = (mode === "widget" ? options?.widgetOptions : options?.sidebarOptions)
+    ?.panel;
   const buttonPlacement = button?.placement ?? "inline";
-  const buttonFixedOffset = button?.fixedOffset;
-  const panelPlacement =
-    rawPanelPlacement ??
-    (mode === "widget" && (rawPanelFixedOffset || buttonPlacement === "fixed")
-      ? "fixed"
-      : "center");
+  const panelPlacement = resolvePanelPlacement({
+    mode,
+    rawPanelPlacement: rawPanelOptions?.placement,
+    rawPanelFixedOffset: rawPanelOptions?.fixedOffset,
+    buttonPlacement
+  });
   const panelFixedOffset =
     mode === "widget" && panelPlacement === "fixed"
-      ? resolvePanelFixedOffset(panel?.fixedOffset, buttonFixedOffset)
+      ? resolvePanelFixedOffset(panel?.fixedOffset, button?.fixedOffset)
       : undefined;
-  const panelWidth = panel?.width;
-  const panelMaxHeight = panel?.maxHeight;
-  const footerSlot = slots.footer;
-  const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<SubmitStatus>({ type: "idle" });
+  const [lastSuccessPayload, setLastSuccessPayload] =
+    useState<BoopSubmitPayload | null>(null);
+  const [successVisible, setSuccessVisible] = useState(false);
+  const successAnimationRef = useRef<number | undefined>(undefined);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const successRef = useRef<HTMLDivElement | null>(null);
+  const panelPointerDownRef = useRef(false);
+  const [contentHeight, setContentHeight] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -102,112 +116,228 @@ export const Boop = ({ options }: BoopProps) => {
     message: placeholders?.message ?? "What would you like to share?"
   };
 
-  const getStyle = (key: keyof typeof styles) => ({
-    ...(useDefaultStyles ? styles[key] : {}),
-    ...(styleOverrides?.[key] ?? {})
+  const getStyle = useCallback(
+    (key: keyof typeof styles) => ({
+      ...(useDefaultStyles ? styles[key] : {}),
+      ...(styleOverrides?.[key] ?? {})
+    }),
+    [styleOverrides, styles, useDefaultStyles]
+  );
+
+  const animationState = resolveAnimationState(animation, backdrop);
+  const { isRendered, isVisible, open: openVisibility, close } = useBoopVisibility({
+    shouldAnimate: animationState.shouldAnimate,
+    durationMs: animationState.durationMs,
+    onOpen,
+    onClose
   });
 
-  const resetStatus = () => setStatus({ type: "idle" });
+  const open = useCallback(() => {
+    setStatus({ type: "idle" });
+    setSuccessVisible(false);
+    openVisibility();
+  }, [openVisibility]);
 
-  const open = () => {
-    resetStatus();
-    setIsOpen(true);
-    onOpen?.();
-  };
+  const setFieldValue = useCallback(
+    (field: BoopFieldName, value: string) => {
+      if (field === "name") {
+        if (value === name) {
+          return;
+        }
+        setName(value);
+      } else if (field === "email") {
+        if (value === email) {
+          return;
+        }
+        setEmail(value);
+      } else {
+        if (value === message) {
+          return;
+        }
+        setMessage(value);
+      }
+      onFieldChange?.(field, value);
+    },
+    [email, message, name, onFieldChange]
+  );
 
-  const close = useCallback(() => {
-    setIsOpen(false);
-    onClose?.();
-  }, [onClose]);
+  const setFieldValues = useCallback(
+    (values?: BoopFieldValues, mode: BoopFieldValuesMode = "controlled") => {
+      if (!values) {
+        return;
+      }
+      if (values.name !== undefined && (mode === "controlled" || !name)) {
+        setFieldValue("name", values.name);
+      }
+      if (values.email !== undefined && (mode === "controlled" || !email)) {
+        setFieldValue("email", values.email);
+      }
+      if (values.message !== undefined && (mode === "controlled" || !message)) {
+        setFieldValue("message", values.message);
+      }
+    },
+    [email, message, name, setFieldValue]
+  );
+
+  useImperativeHandle(
+    resolvedRef,
+    () => ({
+      setFieldValue,
+      setFieldValues
+    }),
+    [setFieldValue, setFieldValues]
+  );
+
+  const successTransitionMs = Math.max(animationState.durationMs, 500);
+  const lockContentHeight = useCallback(
+    (element: HTMLElement | null) => {
+      if (!animationState.shouldAnimate || !element) {
+        return;
+      }
+      const nextHeight = element.offsetHeight;
+      if (nextHeight) {
+        setContentHeight(nextHeight);
+      }
+    },
+    [animationState.shouldAnimate]
+  );
+
+  useEffect(() => {
+    if (includeStackTrace) {
+      ensureConsoleCapture();
+    }
+  }, [includeStackTrace]);
 
   useEffect(() => {
     if (autoOpen) {
       open();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoOpen]);
+  }, [autoOpen, open]);
 
   useEffect(() => {
-    if (!isOpen) {
+    setFieldValues(resolvedOptions.fieldValues, resolvedOptions.fieldValuesMode);
+  }, [resolvedOptions.fieldValues, resolvedOptions.fieldValuesMode, setFieldValues]);
+
+  useEffect(() => {
+    if (!animationState.shouldAnimate) {
+      setContentHeight(null);
       return;
     }
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        close();
+    if (status.type === "success" && !closeOnSubmit) {
+      lockContentHeight(successRef.current);
+    } else {
+      lockContentHeight(formRef.current);
+    }
+  }, [animationState.shouldAnimate, closeOnSubmit, lockContentHeight, status.type]);
+
+  useEffect(() => {
+    if (contentHeight === null || !animationState.shouldAnimate) {
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      setContentHeight(null);
+    }, successTransitionMs);
+    return () => window.clearTimeout(timeout);
+  }, [animationState.shouldAnimate, contentHeight, successTransitionMs]);
+
+  useEffect(() => {
+    if (successAnimationRef.current !== undefined) {
+      window.cancelAnimationFrame(successAnimationRef.current);
+      successAnimationRef.current = undefined;
+    }
+    if (status.type === "success" && !closeOnSubmit) {
+      setSuccessVisible(false);
+      successAnimationRef.current = window.requestAnimationFrame(() => {
+        setSuccessVisible(true);
+      });
+    }
+    return () => {
+      if (successAnimationRef.current !== undefined) {
+        window.cancelAnimationFrame(successAnimationRef.current);
+        successAnimationRef.current = undefined;
       }
     };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [close, isOpen]);
+  }, [closeOnSubmit, status.type]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!message.trim()) {
-      const messageText = "Please add a feedback message.";
-      setStatus({ type: "error", message: messageText });
-      onValidationError?.("message", messageText);
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      const messageText = "Please provide a valid email address.";
-      setStatus({ type: "error", message: messageText });
-      onValidationError?.("email", messageText);
+    if (formRef.current && !formRef.current.reportValidity()) {
       return;
     }
 
     setIsSubmitting(true);
     setStatus({ type: "idle" });
-    onSubmitStart?.();
 
     try {
-      const payload = {
-        url: window.location.href,
+      const payload: BoopSubmitPayload = {
         name: name.trim() || undefined,
         email: email.trim() || undefined,
-        message: message.trim(),
-        metadata
+        message: message.trim()
       };
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+      await submitBoopFeedback({
+        endpoint,
+        callbacks,
+        metadata,
+        payload,
+        urlResolver,
+        includeStackTrace
       });
-
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-      }
-
+      lockContentHeight(formRef.current);
       setStatus({ type: "success", message: successMessage });
+      setLastSuccessPayload(payload);
       setMessage("");
-      onSubmitSuccess?.(response);
       if (closeOnSubmit) {
         close();
+      } else {
+        setSuccessVisible(true);
       }
     } catch (error) {
-      const submitError =
-        error instanceof Error ? error : new Error(errorMessage);
+      const submitError = error instanceof Error ? error : new Error(errorMessage);
       setStatus({ type: "error", message: submitError.message || errorMessage });
-      onSubmitError?.(submitError);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleResetSuccess = useCallback(() => {
+    lockContentHeight(successRef.current);
+    setStatus({ type: "idle" });
+    setSuccessVisible(false);
+  }, [lockContentHeight]);
+
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
+    if (panelPointerDownRef.current) {
+      panelPointerDownRef.current = false;
+      return;
+    }
     close();
   };
 
   const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
   };
+
+  const handlePanelPointerDown = () => {
+    panelPointerDownRef.current = true;
+  };
+
+  const {
+    panelMotionStyle,
+    panelTransitionStyle,
+    overlayBaseStyle,
+    overlayBackdropStyle,
+    overlayTransitionStyle
+  } = buildBoopMotionStyles({
+    mode,
+    panelPlacement,
+    isVisible,
+    animationState,
+    getStyle
+  });
 
   return (
     <div
@@ -227,29 +357,27 @@ export const Boop = ({ options }: BoopProps) => {
             ? {
                 ...(useDefaultStyles
                   ? getStyle("buttonFixed")
-                  : buttonFixedOffset
+                  : button?.fixedOffset
                   ? { position: "fixed", zIndex: 10010 }
                   : {}),
-                ...(buttonFixedOffset ?? {})
+                ...(button?.fixedOffset ?? {})
               }
             : null)
         }}
         onClick={open}
         aria-haspopup="dialog"
       >
-        {buttonLabel}
+        {button?.label ?? "Feedback"}
       </button>
 
-      {isOpen ? (
+      {isRendered ? (
         <div
           className={mergeClassNames("boop-overlay", classNames?.overlay)}
-          style={
-            mode === "widget" && panelPlacement === "fixed"
-              ? getStyle("overlay")
-              : mode === "widget"
-              ? getStyle("overlayCenter")
-              : getStyle("overlay")
-          }
+          style={{
+            ...overlayBaseStyle,
+            ...overlayBackdropStyle,
+            ...overlayTransitionStyle
+          }}
           role="presentation"
           onClick={handleOverlayClick}
         >
@@ -260,13 +388,16 @@ export const Boop = ({ options }: BoopProps) => {
               ...(mode === "widget" && panelPlacement === "fixed"
                 ? { position: "fixed", ...(panelFixedOffset ?? {}) }
                 : {}),
-              ...(panelWidth ? { maxWidth: panelWidth } : {}),
-              ...(panelMaxHeight ? { maxHeight: panelMaxHeight } : {})
+              ...(panel?.width ? { maxWidth: panel.width } : {}),
+              ...(panel?.maxHeight ? { maxHeight: panel.maxHeight } : {}),
+              ...panelTransitionStyle,
+              ...panelMotionStyle
             }}
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
             onClick={handlePanelClick}
+            onPointerDown={handlePanelPointerDown}
           >
             <div
               className={mergeClassNames("boop-header", classNames?.header)}
@@ -286,87 +417,155 @@ export const Boop = ({ options }: BoopProps) => {
               </button>
             </div>
 
-            <form
-              className={mergeClassNames("boop-form", classNames?.form)}
-              style={getStyle("form")}
-              noValidate
-              onSubmit={handleSubmit}
+            <div
+              style={
+                contentHeight !== null && animationState.shouldAnimate
+                  ? {
+                      height: contentHeight,
+                      overflow: "hidden",
+                      transition: `height ${successTransitionMs}ms ${animationState.easing}`,
+                      willChange: "height"
+                    }
+                  : undefined
+              }
             >
-              <label
-                className={mergeClassNames("boop-field", classNames?.field)}
-                style={getStyle("field")}
-              >
-                {labelText.name}
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                    setName(event.target.value);
-                    onFieldChange?.("name", event.target.value);
+              {status.type === "success" && !closeOnSubmit ? (
+                <div
+                  ref={successRef}
+                  className={mergeClassNames("boop-success", classNames?.form)}
+                  style={{
+                    ...getStyle("form"),
+                    ...(animationState.shouldAnimate
+                      ? {
+                          transition: `opacity ${successTransitionMs}ms ${animationState.easing}, transform ${successTransitionMs}ms ${animationState.easing}`,
+                          opacity: successVisible ? 1 : 0,
+                          transform: successVisible
+                            ? "translateY(0) scale(1)"
+                            : "translateY(12px) scale(0.98)",
+                          willChange: "transform, opacity"
+                        }
+                      : {})
                   }}
-                  placeholder={placeholderText.name}
-                  style={getStyle("input")}
-                />
-              </label>
+                >
+                  {lastSuccessPayload && onSuccessRenderer
+                    ? onSuccessRenderer(lastSuccessPayload, {
+                        close,
+                        reset: handleResetSuccess
+                      })
+                    : null}
+                  {!onSuccessRenderer ? (
+                    <p style={{ margin: 0 }}>{successMessage}</p>
+                  ) : null}
+                </div>
+              ) : (
+                <form
+                  ref={formRef}
+                  className={mergeClassNames("boop-form", classNames?.form)}
+                  style={getStyle("form")}
+                  noValidate
+                  onSubmit={handleSubmit}
+                >
+                  <label
+                    className={mergeClassNames("boop-field", classNames?.field)}
+                    style={getStyle("field")}
+                  >
+                    {labelText.name}
+                  <input
+                      type="text"
+                    id={`${titleId}-name`}
+                    name="name"
+                      value={name}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                        setFieldValue("name", event.target.value);
+                      }}
+                      placeholder={placeholderText.name}
+                      style={getStyle("input")}
+                      disabled={isSubmitting}
+                    />
+                  </label>
 
-              <label
-                className={mergeClassNames("boop-field", classNames?.field)}
-                style={getStyle("field")}
-              >
-                {labelText.email}
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                    setEmail(event.target.value);
-                    onFieldChange?.("email", event.target.value);
-                  }}
-                  placeholder={placeholderText.email}
-                  style={getStyle("input")}
-                />
-              </label>
+                  <label
+                    className={mergeClassNames("boop-field", classNames?.field)}
+                    style={getStyle("field")}
+                  >
+                    {labelText.email}
+                  <input
+                      type="email"
+                    id={`${titleId}-email`}
+                    name="email"
+                      value={email}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                        setFieldValue("email", event.target.value);
+                      }}
+                      placeholder={placeholderText.email}
+                      style={getStyle("input")}
+                      disabled={isSubmitting}
+                    />
+                  </label>
 
-              <label
-                className={mergeClassNames("boop-field", classNames?.field)}
-                style={getStyle("field")}
-              >
-                {labelText.message}
-                <textarea
-                  value={message}
-                  onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
-                    setMessage(event.target.value);
-                    onFieldChange?.("message", event.target.value);
-                  }}
-                  placeholder={placeholderText.message}
-                  style={{ ...getStyle("input"), ...getStyle("textarea") }}
-                  className={mergeClassNames("boop-textarea", classNames?.textarea)}
-                  autoFocus
-                  required
-                />
-              </label>
+                  <label
+                    className={mergeClassNames("boop-field", classNames?.field)}
+                    style={getStyle("field")}
+                  >
+                    {labelText.message}
+                  <textarea
+                    id={`${titleId}-message`}
+                    name="message"
+                      value={message}
+                      onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
+                        setFieldValue("message", event.target.value);
+                      }}
+                      placeholder={placeholderText.message}
+                      style={{ ...getStyle("input"), ...getStyle("textarea") }}
+                      className={mergeClassNames("boop-textarea", classNames?.textarea)}
+                      autoFocus
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </label>
 
-              <button
-                type="submit"
-                className={mergeClassNames("boop-submit", classNames?.submit)}
-                style={getStyle("submit")}
-                disabled={isSubmitting}
-              >
-                {labelText.submit}
-              </button>
-            </form>
+                  <button
+                    type="submit"
+                    className={mergeClassNames("boop-submit", classNames?.submit)}
+                    style={getStyle("submit")}
+                    disabled={isSubmitting}
+                  >
+                    {labelText.submit}
+                  </button>
+                </form>
+              )}
+            </div>
 
             <div
               className={mergeClassNames("boop-footer", classNames?.footer)}
               style={getStyle("footer")}
             >
-              {status.type !== "idle" ? (
-                <span aria-live="polite">{status.message}</span>
+              {status.type === "error" ? (
+                <div className="boop-error-message-container" style={getStyle("errorMessageContainer")}>
+                  <span className="boop-error-message" aria-live="polite" style={getStyle("errorMessage")}>{status.message}</span>
+                </div>
               ) : null}
-              {footerSlot}
+              {slots.footer}
             </div>
+            {resolvedOptions?.attribution && (
+              <div
+                className={mergeClassNames("boop-attribution", classNames?.attribution)}
+                style={getStyle("attribution")}
+              >
+                Powered by{" "}
+                <a
+                  href="https://shtbox.io"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "inherit" }}
+                >
+                  Boop
+                </a>
+              </div>
+            )}
           </div>
         </div>
       ) : null}
     </div>
   );
-};
+});

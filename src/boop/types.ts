@@ -12,6 +12,9 @@ export type BoopClassNames = Partial<{
   submit: string;
   close: string;
   footer: string;
+  attribution: string;
+  errorMessageContainer: string;
+  errorMessage: string;
 }>;
 
 export type BoopButtonPlacement = "inline" | "fixed";
@@ -19,6 +22,10 @@ export type BoopPanelPlacement = "center" | "fixed";
 export type BoopPanelVariant = "sidebar" | "widget";
 
 export type BoopFieldName = "name" | "email" | "message";
+
+export type BoopFieldValues = Partial<Record<BoopFieldName, string>>;
+
+export type BoopFieldValuesMode = "initial" | "controlled";
 
 export type BoopFixedOffset = Partial<{
   top: number;
@@ -38,6 +45,32 @@ export type BoopPanelOptions = Partial<{
   fixedOffset: BoopFixedOffset;
   width: number | string;
   maxHeight: number | string;
+}>;
+
+export type BoopWidgetAnimation = Partial<{
+  fade: boolean;
+  slide: boolean;
+  grow: boolean;
+  slideDistance: number;
+  scale: number;
+}>;
+
+export type BoopSidebarAnimation = Partial<{
+  slide: boolean;
+  slideDistance: number | string;
+}>;
+
+export type BoopAnimationOptions = Partial<{
+  enabled: boolean;
+  durationMs: number;
+  easing: string;
+  widget: BoopWidgetAnimation;
+  sidebar: BoopSidebarAnimation;
+}>;
+
+export type BoopBackdropOptions = Partial<{
+  enabled: boolean;
+  fade: boolean;
 }>;
 
 export type BoopLabels = Partial<{
@@ -71,7 +104,10 @@ export type BoopStyleKey =
   | "textarea"
   | "submit"
   | "close"
-  | "footer";
+  | "footer"
+  | "attribution"
+  | "errorMessageContainer"
+  | "errorMessage";
 
 export type BoopBehaviorOptions = Partial<{
   autoOpen: boolean;
@@ -109,7 +145,28 @@ export type BoopSlots = Partial<{
   footer: React.ReactNode;
 }>;
 
+export type BoopSubmitPayload = {
+  name?: string;
+  email?: string;
+  message: string;
+  url?: string;
+  metadata?: Record<string, unknown>;
+};
+
+export type BoopUrlResolver = () => string | undefined;
+
+export type BoopSuccessRendererHelpers = {
+  close: () => void;
+  reset: () => void;
+};
+
+export type BoopSuccessRenderer = (
+  payload: BoopSubmitPayload,
+  helpers: BoopSuccessRendererHelpers
+) => React.ReactNode;
+
 export type BoopOptions = Partial<{
+  projectId: string;
   endpoint: string;
   darkMode: boolean;
   mode: BoopPanelVariant;
@@ -118,10 +175,24 @@ export type BoopOptions = Partial<{
   behavior: BoopBehaviorOptions;
   callbacks: BoopCallbacks;
   style: BoopStyleOptions;
+  animation: BoopAnimationOptions;
+  backdrop: BoopBackdropOptions;
+  urlResolver: BoopUrlResolver;
+  includeStackTrace: boolean;
+  onSuccessRenderer: BoopSuccessRenderer;
   metadata: Record<string, unknown>;
   slots: BoopSlots;
+  attribution: boolean;
+  fieldValues: BoopFieldValues;
+  fieldValuesMode: BoopFieldValuesMode;
 }>;
 
 export interface BoopProps {
   options?: BoopOptions;
 }
+
+export type BoopHandle = {
+  setFieldValue: (field: BoopFieldName, value: string) => void;
+  setFieldValues: (values: BoopFieldValues) => void;
+};
+

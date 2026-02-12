@@ -1,7 +1,7 @@
 {
   "name": "@shtbox/boop",
-  "version": "0.3.0",
-  "description": "Simple Interactions - Embeddable feedback widget for React websites.",
+  "version": "0.8.0",
+  "description": "Feedback, without the friction - Embeddable feedback widget for React websites.",
   "keywords": [
     "react",
     "feedback",
@@ -12,14 +12,24 @@
   "license": "MIT",
   "author": "Shtbox.io",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/client.cjs",
+  "module": "./dist/client.js",
+  "types": "./dist/client.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "require": "./dist/client.cjs"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "require": "./dist/client.cjs"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js",
+      "require": "./dist/server.cjs"
     }
   },
   "files": [
@@ -29,38 +39,48 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node scripts/write-client-entry.mjs",
     "dev": "tsup --watch",
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
-    "commit": "cz",
+    "release:dry-run": "semantic-release --dry-run --no-ci",
     "bump:patch": "npm version patch --tag-version-prefix v -m \"chore(release): v%s\"",
     "bump:minor": "npm version minor --tag-version-prefix v -m \"chore(release): v%s\"",
     "bump:major": "npm version major --tag-version-prefix v -m \"chore(release): v%s\"",
-    "bump:prepatch": "npm version prepatch --tag-version-prefix v -m \"chore(release): v%s\"",
-    "bump:preminor": "npm version preminor --tag-version-prefix v -m \"chore(release): v%s\"",
-    "bump:premajor": "npm version premajor --tag-version-prefix v -m \"chore(release): v%s\"",
-    "bump:prerelease": "npm version prerelease --tag-version-prefix v -m \"chore(release): v%s\"",
+    "bump:pre:patch": "npm version prepatch --tag-version-prefix v -m \"chore(release): v%s\"",
+    "bump:pre:minor": "npm version preminor --tag-version-prefix v -m \"chore(release): v%s\"",
+    "bump:pre:major": "npm version premajor --tag-version-prefix v -m \"chore(release): v%s\"",
+    "bump:pre:release": "npm version prerelease --tag-version-prefix v -m \"chore(release): v%s\"",
+    "deploy": "npm run build && npm publish --access public",
+    "deploy:prerelease": "npm run build && npm publish --access public --tag prerelease",
     "prepack": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "smoke:vite": "node scripts/smoke.mjs vite",
+    "smoke:next": "node scripts/smoke.mjs next",
+    "smoke:react18": "node scripts/smoke.mjs all --react 18",
+    "smoke:react19": "node scripts/smoke.mjs all --react 19"
   },
   "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.5",
+    "@semantic-release/npm": "^13.1.4",
+    "@semantic-release/release-notes-generator": "^14.1.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^24.5.2",
     "@types/react": "^19.2.13",
-    "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.0.18",
-    "commitizen": "^4.3.1",
-    "cz-conventional-changelog": "^3.3.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jsx-a11y": "^6.10.2",
@@ -70,7 +90,7 @@
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "semantic-release": "^25.0.3",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.54.0",
@@ -78,9 +98,6 @@
   },
   "directories": {
     "example": "example"
-  },
-  "commitizen": {
-    "path": "cz-conventional-changelog"
   },
   "repository": {
     "type": "git",

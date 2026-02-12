@@ -1,8 +1,8 @@
-export { Boop } from "./Boop";
 export type {
-  BoopProps,
   BoopClassNames,
+  BoopButtonOptions,
   BoopButtonPlacement,
+  BoopPanelOptions,
   BoopPanelPlacement,
   BoopPanelVariant,
   BoopLabels,
@@ -11,8 +11,6 @@ export type {
   BoopFieldValues,
   BoopFieldValuesMode,
   BoopFixedOffset,
-  BoopButtonOptions,
-  BoopPanelOptions,
   BoopWidgetAnimation,
   BoopSidebarAnimation,
   BoopAnimationOptions,
@@ -28,8 +26,8 @@ export type {
   BoopSuccessRendererHelpers,
   BoopSlots,
   BoopOptions,
-  BoopHandle
+  BoopHandle,
+  BoopProps
 } from "./boop/types";
 
-export { BoopProvider, useBoop } from "./provider/boop-provider";
 export { defaultUrlResolver, resolveUrlFromLocation } from "./boop/url";
